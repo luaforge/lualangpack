@@ -1,0 +1,266 @@
+<?xml version='1.0'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>
+
+   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.3'>
+
+      <Package Id='14DADF49-CFF6-436c-B3E9-E3320DF3B0A6'/>
+      <Media Id='1' Cabinet='product.cab' EmbedCab='yes' />
+
+      <Property Id='ENVDIR_2005'>
+         <RegistrySearch 
+           Id="RL_EnvironmentDir_2005" 
+           Root="HKLM" 
+           Key="SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS" 
+           Name="EnvironmentDirectory" 
+           Type="directory" />
+      </Property>
+
+      <Property Id='ENVPATH_2005'>
+         <RegistrySearch 
+           Id="RL_EnvironmentPath_2005" 
+           Root="HKLM" 
+           Key="SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS" 
+           Name="EnvironmentPath" 
+           Type="raw" />
+      </Property>
+
+      <Property Id='PRODDIR_2005'>
+         <RegistrySearch 
+           Id="RL_ProductDir_2005" 
+           Root="HKLM" 
+           Key="SOFTWARE\Microsoft\VisualStudio\8.0\Setup\VS" 
+           Name="ProductDir" 
+           Type="directory" />
+      </Property>
+
+      <Property Id='WINROOT'>
+         <RegistrySearch 
+           Id="RL_WinRoot_2005" 
+           Root="HKLM" 
+           Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" 
+           Name="SystemRoot" 
+           Type="directory" />
+      </Property>
+
+      <Directory Id='TARGETDIR' Name='SourceDir'>
+
+         <Directory Id='ENVDIR_2005' Name='EnvDir'>
+            <Directory Id='ProjectTemplates' LongName='ProjectTemplates' Name='Projec~1'>
+               <Directory Id='Lua' Name='Lua'>
+                  <Component Id='MyProjectTemplateLua2005' 
+                     Guid='3001A85F-6FED-44e4-8A87-810172C6298F' 
+                     DiskId='1'>
+                     
+                     <File Id='LuaProjectFile' 
+                        LongName='Lua Project.luaproj' 
+                        Name='LuaPro~1.prj' 
+                        src='./Templates/Projects/Lua Project.luaproj' />
+                     
+                     <File Id='entry.lua' 
+                        LongName='entry.lua' 
+                        Name='entry.lua' 
+                        src='./Templates/Projects/entry.lua' />
+
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\InstalledProducts" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\InstalledProducts\LuaLangPack">
+                        <Registry Name="Package" Value="{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" Type="string" />
+                        <Registry Name="UseInterface" Value="1" Type="integer" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Packages" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Packages\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}"
+                        Value="Vsip.LuaLangPack.LuaLangPack, LuaLangPack, Version=8.0.2248.25348, Culture=neutral, PublicKeyToken=9888ca616210efa9" Type="string">
+                        <Registry Name="InprocServer32" Value="[WINROOT]system32\mscoree.dll" Type="string" />
+                        <Registry Name="Class" Value="Vsip.LuaLangPack.LuaLangPack" Type="string" />
+                        <Registry Name="CodeBase" Value="[PRODDIR_2005]Lua\LuaLangPack.dll" Type="string" />
+                        <Registry Name="ID" Value="110" Type="integer" />
+                        <Registry Name="MinEdition" Value="Standard" Type="string" />
+                        <Registry Name="ProductVersion" Value="0.3" Type="string" />
+                        <Registry Name="ProductName" Value="Lua Language Integration Pack" Type="string" />
+                        <Registry Name="CompanyName" Value="Real Networks Inc." Type="string" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Languages" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Languages\Language Services" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Languages\Language Services\VS 2005 Lua Language Service"
+                        Value="{306766fb-5a6c-3d49-a65c-531c5da476a4}" Type="string">
+                        <Registry Name="Package" Value="{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" Type="string" />
+                        <Registry Name="LangResID" Value="103" Type="integer" />
+                        <Registry Name="AutoOutlining" Value="0" Type="integer" />
+                        <Registry Name="EnableAsyncCompletion" Value="0" Type="integer" />
+                        <Registry Name="CodeSense" Value="0" Type="integer" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Languages\File Extensions\.lua"
+                        Value="{306766fb-5a6c-3d49-a65c-531c5da476a4}" Type="string">
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\CLSID" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\CLSID\{bf6d251f-51cc-4a5b-b56b-cb791b7f2724}"
+                        Value="Vsip.LuaLangPack.LuaPropertyPage" Type="string">
+                        <Registry Name="InprocServer32" Value="[WINROOT]system32\mscoree.dll" Type="string" />
+                        <Registry Name="Class" Value="Vsip.LuaLangPack.LuaPropertyPage" Type="string" />
+                        <Registry Name="CodeBase" Value="[PRODDIR_2005]Lua\LuaLangPack.dll" Type="string" />
+                        <Registry Name="ThreadingModel" Value="Both" Type="string" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Projects" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Projects\{74f2664d-668e-4058-af23-3c959863aee8}"
+                        Value="LuaProjectFactory" Type="string">
+                        <Registry Name="DisplayName" Value="Lua Project" Type="string" />
+                        <Registry Name="DisplayProjectFileExtensions" Value="LuaProject Project Files (*.luaproj);*.luaproj" Type="string" />
+                        <Registry Name="Package" Value="{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" Type="string" />
+                        <Registry Name="DefaultProjectExtension" Value="luaproj" Type="string" />
+                        <Registry Name="PossibleProjectExtensions" Value="luaproj" Type="string" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\NewProjectTemplates" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\NewProjectTemplates\TemplateDirs" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\NewProjectTemplates\TemplateDirs\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\NewProjectTemplates\TemplateDirs\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}\/1"
+                        Value="Lua Project" Type="string">
+                        <Registry Name="SortPriority" Value="100" Type="integer" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Projects\{74f2664d-668e-4058-af23-3c959863aee8}\AddItemTemplates" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Projects\{74f2664d-668e-4058-af23-3c959863aee8}\AddItemTemplates\TemplateDirs" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Projects\{74f2664d-668e-4058-af23-3c959863aee8}\AddItemTemplates\TemplateDirs\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Projects\{74f2664d-668e-4058-af23-3c959863aee8}\AddItemTemplates\TemplateDirs\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}\/1"
+                        Value="Lua Items" Type="string">
+                        <Registry Name="SortPriority" Value="500" Type="integer" />
+                     </Registry>
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Services" />
+                     <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Services\{306766fb-5a6c-3d49-a65c-531c5da476a4}"
+                        Value="{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" Type="string">
+                        <Registry Name="Name" Value="VS 2005 Lua Language Service" Type="string" />
+                     </Registry>
+
+                     <Registry Action='write' Root='HKLM' Type='string' 
+                        Key='Software\Microsoft\VisualStudio\8.0\NewProjectTemplates\TemplateDirs\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}\/1' 
+                        Name='TemplatesDir' Value='[ENVDIR_2005]ProjectTemplates\Lua' />
+                     
+                  </Component>
+               </Directory>
+            </Directory>
+
+            <Directory Id='ItemTemplates' LongName='ItemTemplates' Name='ItemTe~1'>
+               <Directory Id='LuaItm' Name='Lua'>
+                  <Component Id='MyItemTemplateLua2005' 
+                    Guid='DEDAE9E3-9897-40ab-B6EB-71841EAF5BD3' 
+                    DiskId='1'>
+                     
+                     <File Id='MyItemTemplateLua2005' 
+                       LongName='Lua Source File.lua' 
+                       Name='LuaSrc~1.lua' 
+                       src='./Templates/ProjectItems/Lua Source File.lua' />
+
+                     <Registry Action='write' Root='HKLM' Type='string' 
+                        Key='Software\Microsoft\VisualStudio\8.0\Projects\{74f2664d-668e-4058-af23-3c959863aee8}\AddItemTemplates\TemplateDirs\{b4d22fe4-9555-4288-a8f9-70ed3119eaad}\/1' 
+                        Name='TemplatesDir' Value='[ENVDIR_2005]ItemTemplates\Lua' />
+                     
+                  </Component>
+               </Directory>
+            </Directory>
+
+         </Directory>
+
+         <Directory Id='PRODDIR_2005' Name='ProdDir'>
+            <Directory Id='LuaProd' Name='Lua'>
+               <Component Id='LuaLangBin' 
+                    Guid='85B34FB3-EB93-4cb8-AC41-5B7BD7E7DA1A' 
+                    DiskId='1'>
+                  
+                  <File Id='LuaLangPack' 
+                    LongName='LuaLangPack.dll' 
+                    Name='LuaLan~1.dll' 
+                    src='./Release/LuaLangPack.dll' />
+                  
+                  <File Id='NativeHierarchyWrapper' 
+                    LongName='Interop.NativeHierarchyWrapper.dll' 
+                    Name='Intero~1.dll' 
+                    src='./Release/Interop.NativeHierarchyWrapper.dll' />
+                  
+                  <File Id='Tools.dll' 
+                    LongName='Tools.dll' 
+                    Name='Tools.dll' 
+                    src='./Release/Tools.dll' />
+                  
+                  <File Id='LuaLangIcon' 
+                    LongName='logo.ico' 
+                    Name='logo.ico' 
+                    src='./Resources/logo.ico' />
+
+                  <File Id="HierWrapper" 
+                        Name="NATIVE_1.DLL" 
+                        LongName="NativeHierarchyWrapper.dll" 
+                        src="d:\Program Files\Visual Studio 2005 SDK\2006.02\VisualStudioIntegration\Common\Source\CSharp\NativeHierarchyWrapper\Release\NativeHierarchyWrapper.dll" />
+                  
+                  <Registry Id="registry0" Root="HKCR" 
+                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" 
+                            Value="VisualStudio NativeHierarchyWrapper" Type="string" />
+                  <Registry Id="registry1" Root="HKCR" 
+                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\InprocServer32" 
+                            Value="[PRODDIR_2005]Lua\NativeHierarchyWrapper.dll" Type="string" />
+                  <Registry Id="registry2" Root="HKCR" 
+                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\InprocServer32" 
+                            Name="ThreadingModel" Value="Apartment" Type="string" />
+                  <Registry Id="registry3" Root="HKCR" 
+                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\ProgID" 
+                            Value="VisualStudio.NativeHierarchyWrapper.8.0" Type="string" />
+                  <Registry Id="registry4" Root="HKCR" 
+                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\TypeLib" 
+                            Value="{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}" Type="string" />
+                  <Registry Id="registry5" Root="HKCR" 
+                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\VersionIndependentProgID" 
+                            Value="VisualStudio.NativeHierarchyWrapper" Type="string" />
+                  <Registry Id="registry6" Root="HKCR" 
+                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0" 
+                            Value="VisualStudio NativeHierarchyWrapper Type Library" Type="string" />
+                  <Registry Id="registry7" Root="HKCR" 
+                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\0\win32" 
+                            Value="[PRODDIR_2005]Lua\NativeHierarchyWrapper.dll" Type="string" />
+                  <Registry Id="registry8" Root="HKCR" 
+                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\FLAGS" 
+                            Value="0" Type="string" />
+                  <Registry Id="registry9" Root="HKCR" 
+                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\HELPDIR" 
+                            Value="[PRODDIR_2005]Lua" Type="string" />
+                  <Registry Id="registry10" Root="HKCR" Key="VisualStudio.NativeHierarchyWrapper" 
+                            Value="VisualStudio NativeHierarchyWrapper" Type="string" />
+                  <Registry Id="registry11" Root="HKCR" 
+                            Key="VisualStudio.NativeHierarchyWrapper\CLSID" 
+                            Value="{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" Type="string" />
+                  <Registry Id="registry12" Root="HKCR" 
+                            Key="VisualStudio.NativeHierarchyWrapper\CurVer" 
+                            Value="VisualStudio.NativeHierarchyWrapper.8.0" Type="string" />
+                  <Registry Id="registry13" Root="HKCR" 
+                            Key="VisualStudio.NativeHierarchyWrapper.8.0" 
+                            Value="VisualStudio NativeHierarchyWrapper" Type="string" />
+                  <Registry Id="registry14" Root="HKCR" 
+                            Key="VisualStudio.NativeHierarchyWrapper.8.0\CLSID" 
+                            Value="{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" Type="string" />
+
+                  <Registry Id='LuaReg1' Root='HKCR' Key='.lua' Action='write'
+                     Type='string' Value='VisualStudio.lua.8.0' />
+                  <Registry Id='LuaReg2' Root='HKCR' Key='VisualStudio.lua.8.0' Action='write'
+                     Type='string' Value='Lua Language Source File' />
+                  <Registry Id='LuaReg3' Root='HKCR' Key='VisualStudio.lua.8.0\DefaultIcon' Action='write'
+                     Type='string' Value='[PRODDIR_2005]lua\logo.ico,0' />
+                  <Registry Id='LuaReg4' Root='HKCR' Key='VisualStudio.lua.8.0\Shell\Open\Command' Action='write' 
+                     Type='string' Value='"[ENVPATH_2005]" "%1"'/>
+                  <Registry Id='LuaReg5' Root='HKCR' Key='.luaproj' Action='write'
+                     Type='string' Value='VisualStudio.luaproj.8.0' />
+                  <Registry Id='LuaReg6' Root='HKCR' Key='VisualStudio.luaproj.8.0' Action='write'
+                     Type='string' Value='Lua Language Project File' />
+                  <Registry Id='LuaReg7' Root='HKCR' Key='VisualStudio.luaproj.8.0\DefaultIcon' Action='write'
+                     Type='string' Value='[PRODDIR_2005]lua\logo.ico,0' />
+                  <Registry Id='LuaReg8' Root='HKCR' Key='VisualStudio.luaproj.8.0\Shell\Open\Command' Action='write' 
+                     Type='string' Value='"[ENVPATH_2005]" "%1"'/>
+               </Component>
+            </Directory>
+         </Directory>
+
+      </Directory>
+
+      <Feature Id='LuaLangPackFeature' Title='VS Lua 2005' Level='1'>
+         <ComponentRef Id='MyProjectTemplateLua2005' />
+         <ComponentRef Id='MyItemTemplateLua2005' />
+         <ComponentRef Id='LuaLangBin' />
+      </Feature>
+
+   </Product>
+
+</Wix>

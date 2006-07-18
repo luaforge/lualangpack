@@ -1,0 +1,22 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' "></Configuration>
+    <Name>"Application"</Name>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <LuaRuntimes>Set to the full path of your Lua exe</LuaRuntimes>
+    <LUA_PATH>.;</LUA_PATH>
+    <LUA_CPATH>.;</LUA_CPATH>
+    <EntryScript>.\entry.lua</EntryScript>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'LuaExt' ">
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="entry.lua">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <Target Name="Build">
+    <Exec Command="set LUA_PATH=&quot;$(LUA_PATH)&quot;&amp;&amp;set LUA_CPATH=&quot;$(LUA_CPATH)&quot;&amp;&amp;&quot;$(LuaRuntimes)&quot; &quot;$(EntryScript)&quot;" IgnoreExitCode="false"/>
+  </Target>
+  <Target Name="Compile"/>
+</Project>

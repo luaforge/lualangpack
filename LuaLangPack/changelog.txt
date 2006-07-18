@@ -1,0 +1,9 @@
+Version 0.3
+---------------------------------------
+-First public release.
+
+
+Version 0.4
+---------------------------------------
+-Fixed 'escaped quote within string' syntax highlighting / lexer bug
+-Added Lua 5.1 tokens

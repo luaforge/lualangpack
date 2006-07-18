@@ -1,0 +1,597 @@
+%parser lua.lexer
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////// ABSTRACT SYNTAX /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////// CHUNK ///////////////////////////////////////////
+%symbol chunk {
+	stat s;
+	chunk c;
+	public chunk( stat a ){ s = a; }
+	public chunk( stat a, chunk b ){ s = a; c = b; }
+	public void FillScope( LuaScope scope ) { 
+	   if( s != null )
+	      s.FillScope( scope );
+	   if( c != null )
+	      c.FillScope( scope );   
+	}
+}
+
+
+///////////////////////////// BLOCK ///////////////////////////////////////////
+%symbol block {
+	chunk c;
+	public block( chunk a ){ c = a; }
+	public void FillScope( LuaScope scope ){
+	   LuaScope nested = new LuaScope( scope );
+	   c.FillScope( nested );
+	   scope.nested.AddLast( nested );
+	}
+}
+
+
+///////////////////////////// UNARY OP ////////////////////////////////////////
+%symbol unop {
+
+}
+
+
+///////////////////////////// BINARY OP ///////////////////////////////////////
+%symbol binop {
+
+}
+
+
+///////////////////////////// FUNCTION CALL ///////////////////////////////////
+%symbol functioncall {
+   private prefixexp p;
+   private arg m_a;
+	public functioncall( prefixexp a, arg b ){ p = a; m_a = b; }
+	public virtual void FillScope( LuaScope s ){
+	   p.FillScope( s );
+	   m_a.FillScope( s );
+	}
+	public Object Eval() {
+	   return null;
+	}
+}
+
+
+///////////////////////////// FUNCTION NAME ///////////////////////////////////
+%symbol funcname {
+	NAME name;
+	public funcname( NAME a ){ name = a; }
+	public void FillScope( LuaScope scope ){
+	}
+}
+
+
+///////////////////////////// PARAM LIST //////////////////////////////////////
+%symbol parlist {
+	parlist p;
+	NAME name;
+	public parlist( NAME a ){ name = a; }
+	public parlist( NAME a, parlist b ){ name = a; p = b; }
+}
+
+
+///////////////////////////// FUNCTION BODY ///////////////////////////////////
+%symbol funcbody {
+	block b;
+	parlist p;
+	END e;
+	public funcbody( block a, END c ){ b = a; e = c; }
+	public funcbody( block a, parlist pl, END c ){ b = a; p = pl; e = c; }
+	public void FillScope( LuaScope s ){
+	   s.endLine = e.Line;
+	   b.FillScope( s );
+	}
+}
+
+
+///////////////////////////// PREFIX EXPRESSION ///////////////////////////////
+%symbol prefixexp {
+   private var v;
+   private functioncall fc;
+   private exp e;
+   public prefixexp( var a ){ v = a; }
+   public prefixexp( functioncall a ){ fc = a; }
+   public prefixexp( exp a ){ e = a; }
+   public virtual void FillScope( LuaScope s ){
+      if( v != null ){
+         v.FillScope( s );
+      }
+      else if( fc != null ){
+         fc.FillScope( s );
+      }
+      else if( e != null ){
+         e.FillScope( s );
+      }
+   }
+   public void FillScope( LuaScope s, var v ) {
+      FillScope( s );
+   }
+   public LuaTable GetTable( LuaScope s ) {
+      if( v != null ) {
+         return s.Lookup( v.Eval() ); 
+      }
+      else if( e != null ) {
+         return s.Lookup( e.Eval() ); 
+      } 
+      else if( fc != null ) {
+         return s.Lookup( fc.Eval() );
+      }
+      else {
+         return null;
+      }
+   }
+}
+
+
+///////////////////////////// FIELD ///////////////////////////////////////////
+%symbol field {
+   private exp e;
+   public field( exp a ){ e = a; }
+   public virtual void FillScope( LuaScope s ){
+      e.FillScope( s );
+   }
+   public virtual void FillScope( LuaScope s, var v ){
+      v.FieldAssign( s, e.Eval() );
+   }
+}
+%node FieldExpAssign : field {
+   private exp e1;
+   private exp e2;
+   public FieldExpAssign( exp a, exp b ){ e1 = a; e2 = b; }
+   public override void FillScope( LuaScope s ){
+      e1.FillScope( s );
+      e2.FillScope( s );
+   }
+   public override void FillScope( LuaScope s, var v ){
+      // TODO: Not sure about this one...   
+   }
+}
+%node FieldAssign : field {
+   private NAME n;
+   private exp e;
+   public FieldAssign( NAME a, exp b ){ n = a; e = b; }
+   public override void FillScope( LuaScope s ){
+      e.FillScope( s );
+   }
+   public override void FillScope( LuaScope s, var v ){
+      v.FieldAssign( s, n.s );        
+   }
+}
+
+
+////////////////////////////// FIELD LIST /////////////////////////////////////
+%symbol fieldlist {
+   private fieldlist fl;
+   private field f;
+   public fieldlist( field a, fieldlist b ){ f = a; fl = b; }
+   public fieldlist( field a ){ f = a; }
+   public virtual void FillScope( LuaScope s ){
+      f.FillScope( s );
+      
+      if( fl != null ){
+         fl.FillScope( s );
+      }
+   }
+   public virtual void FillScope( LuaScope s, var v ){
+      f.FillScope( s, v );
+      
+      if( fl != null ){
+         fl.FillScope( s, v );
+      }
+   }
+}
+
+
+////////////////////////////// TABLE //////////////////////////////////////////
+%symbol tableconstructor {
+   private fieldlist f;
+   public tableconstructor( fieldlist a ){ f = a; }
+   public virtual void FillScope( LuaScope s ){
+      if( f != null ){
+         f.FillScope( s );
+      }
+   }
+   public virtual void FillScope( LuaScope s, var v ){
+      v.CreateTable( s ); 
+      if( f != null ){
+         f.FillScope( s, v );
+      }
+   }
+}
+
+
+////////////////////////////// FUNCTION ///////////////////////////////////////
+%symbol function {
+   private funcbody f;
+   public function( funcbody a ){ f = a; } 
+   public virtual void FillScope( LuaScope s ){
+      f.FillScope( s );
+   }
+   public virtual void FillScope( LuaScope s, var v ) {
+      f.FillScope( s );   
+   }
+} 
+
+
+///////////////////////////// EXPRESSION //////////////////////////////////////
+%symbol exp {
+   private function f;
+   private prefixexp p;
+   public exp( function a ){ f = a; }
+   public exp( prefixexp a ){ p = a; } 
+   public virtual void FillScope( LuaScope s ){
+      if( f != null ){
+         f.FillScope( s );
+      }
+      else if( p != null ){
+         p.FillScope( s );
+      }
+   }  
+   public virtual void FillScope( LuaScope s, var v ){
+      if( f != null ){
+         f.FillScope( s, v );
+      }
+      else if( p != null ){
+         p.FillScope( s, v );
+      }
+   } 
+   public virtual Object Eval() {
+      return null;
+   }
+}
+%node Binop : exp {
+   private exp e1;
+   private exp e2;
+   private binop b;
+   public Binop( exp a, binop b, exp c ){ e1 = a; e2 = c; }
+   public override void FillScope( LuaScope s ){
+      e1.FillScope( s );
+      e2.FillScope( s );
+   }
+   public override void FillScope( LuaScope s, var v ){
+      e1.FillScope( s, v );
+      e2.FillScope( s, v );
+   }
+   public override Object Eval() {
+      return null; // TODO: Carry out evaluation           
+   }
+}
+%node Unop : exp {
+   private exp e;
+   public Unop( unop a, exp b ){ e = b; }
+   public override void FillScope( LuaScope s ){
+      e.FillScope( s );
+   } 
+   public override void FillScope( LuaScope s, var v ){
+      e.FillScope( s, v );
+   } 
+   public override Object Eval() {
+      return null; // TODO: Carry out evaluation           
+   }
+}
+%node ExpTableDec : exp {
+   private tableconstructor t;
+   public ExpTableDec( tableconstructor a ){ t = a; }
+   public override void FillScope( LuaScope s ){
+      t.FillScope( s );
+   }
+   public override void FillScope( LuaScope s, var v ){
+      t.FillScope( s, v );
+   }
+   public override Object Eval() {
+      return t;
+   }
+} 
+%node Atom : exp {
+   LITERAL l;
+   NUMBER n;
+   bool t = false;
+   bool nil = false;
+   public Atom( LITERAL a ){ l = a; }
+   public Atom( NUMBER a ){ n = a; }
+   public Atom( FALSE a ){ t = false; }
+   public Atom( TRUE a ){ t = true; }
+   public Atom( NIL a ){ nil = true; }
+   public override Object Eval() {
+      if( l != null ) {
+         return l;
+      }
+      else if( n != null ) {
+         return n;
+      }
+      else if( nil ) {
+         return null;   
+      }
+      else {
+         return t;
+      }
+   }
+}
+
+
+///////////////////////////// EXPRESSION LIST /////////////////////////////////
+%symbol explist {
+   private explist l;
+   private exp e;
+   public explist( exp a, explist b ){ e = a; l = b; }
+   public explist( exp a ){ e = a; }
+   public void FillScope( LuaScope s ){
+      if( l != null ) {
+         l.FillScope( s );
+      }
+      
+      e.FillScope( s );           
+   }
+   public void FillScope( LuaScope s, varlist v ){
+      if( l != null ) {
+         l.FillScope( s, v.vl );
+      }
+      
+      e.FillScope( s, v.v );           
+   }
+}
+
+
+///////////////////////////// VARIABLE ////////////////////////////////////////
+%symbol var {
+   private NAME n;
+   public var( NAME a ){ n = a; }
+   public virtual void FillScope( LuaScope scope ){}
+   public virtual void CreateTable( LuaScope s ){
+      s.tables.Add(n.s, new LuaTable());   
+   }
+   public virtual void FieldAssign( LuaScope s, object name ){
+      LuaTable t = s.Lookup( n.s );
+      t.vals.AddLast( name );
+   }
+   public virtual Object Eval() {
+      return n;
+   }
+}
+%node PackageRef : var {
+   private NAME n;
+   prefixexp p;
+   public PackageRef( prefixexp a, NAME b ){ p = a; n = b; }
+   public override void FillScope( LuaScope s ){}
+   public override void CreateTable( LuaScope s ){
+      LuaTable t = p.GetTable( s );
+      if( t != null ){
+         t.tables.Add(n.s, new LuaTable());   
+      }
+   }
+   public override void FieldAssign( LuaScope s, object name ){
+      LuaTable t = p.GetTable( s );
+      if( t != null ){
+         t = (LuaTable)t.tables[n.s];
+         if( t != null ){
+            t.vals.AddLast( name ); 
+         }
+      }
+   }
+}
+%node TableRef : var {
+   prefixexp p;
+   exp e;
+   public TableRef( prefixexp a, exp b ){ p = a; e = b; }
+   public override void FillScope( LuaScope s ){}
+   public override void CreateTable( LuaScope s ){
+      LuaTable t = p.GetTable( s );
+      if( t != null ){
+         t.tables.Add(e.Eval(), new LuaTable());     
+      }
+   }
+   public override void FieldAssign( LuaScope s, object name ){
+      LuaTable t = p.GetTable( s );
+      if( t != null ){
+         t = (LuaTable)t.tables[e.Eval()];
+         if( t != null ){
+            t.vals.AddLast( name ); 
+         }
+      }
+   }  
+}
+
+
+///////////////////////////// VARIABLE LIST ///////////////////////////////////
+%symbol varlist {
+   public var v;
+   public varlist vl;
+   public varlist( var a, varlist b ){ v = a; vl = b; }
+   public varlist( var a ){ v = a; } 
+   public void FillScope( LuaScope scope ) {
+      v.FillScope( scope );
+      if( vl != null ){
+         vl.FillScope( scope );   
+      }
+   }
+}
+
+
+///////////////////////////// STATMENT ////////////////////////////////////////
+%symbol stat {
+	public stat(){}
+	public virtual void FillScope( LuaScope scope ){} 
+}
+%node Assignment : stat {
+   varlist v;
+   explist e;
+   public Assignment( varlist a, explist b ){ v = a; e = b; }
+   public override void FillScope( LuaScope s ){
+      v.FillScope( s );
+      e.FillScope( s, v );
+   }
+}
+%node Retval : stat {
+   private explist e;
+   public Retval( explist a ){ e = a; }
+}
+%node FuncDecl : stat
+{
+   funcname fname;
+   funcbody body;
+   public FuncDecl( funcname a, funcbody b ){ fname = a; body = b; }
+   public override void FillScope( LuaScope scope ){
+      scope.beginLine = fname.Line;
+      fname.FillScope( scope );
+      body.FillScope( scope );
+   }
+}
+%node LocalFuncDecl : stat
+{
+	funcbody body;
+	NAME name;
+	public LocalFuncDecl( NAME a, funcbody b ){ name = a; body = b; }
+	public override void FillScope( LuaScope scope ){	   
+	   scope.beginLine = name.Line;   
+	   body.FillScope( scope );
+	}
+}
+
+
+////////////////////////////// ARGUMENT ///////////////////////////////////////
+%symbol arg {
+   private explist e;
+   private tableconstructor t;
+   public arg( tableconstructor a ){ t = a; }
+   public arg( explist a ){ a = e; }
+   public virtual void FillScope( LuaScope s ){
+      if( e != null ){
+         e.FillScope( s );
+      }
+      else if( t != null ){
+         t.FillScope( s );
+      }
+   } 
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////// GRAMMAR PRODUCTIONS /////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+chunk			: stat:a													            %chunk( a )									
+				| stat:a SEMICOLON											      %chunk( a )
+				| stat:a chunk:b											         %chunk( a, b )
+				| stat:a SEMICOLON chunk:b									      %chunk( a, b );
+				
+block			: chunk:a													         %block( a );
+
+stat			: varlist:a ASSIGN explist:b									   %Assignment( a, b )													     									
+				| prefixexp                                              %stat()	
+				| DO block END												         %stat()
+				| WHILE exp DO block END									      %stat()
+				| REPEAT block UNTIL exp									      %stat()
+				| IF exp THEN block END										      %stat()
+				| IF exp THEN block ELSEIF elseif						      %stat()
+				| IF exp THEN block ELSE block END						      %stat()
+				| RETURN													            %stat()
+				| RETURN explist:a											      %Retval( a )
+				| BREAK														         %stat()
+				| FOR NAME ASSIGN exp COMMA exp DO block END				   %stat()
+				| FOR NAME ASSIGN exp COMMA exp COMMA exp DO block END	%stat()
+				| FOR namelist IN explist DO block END						   %stat()
+				| FUNCTION funcname:a funcbody:b							      %FuncDecl( a, b )	
+				| LOCAL FUNCTION NAME:s funcbody:b 							   %LocalFuncDecl( s, b )
+				| LOCAL namelist											         %stat()
+				| LOCAL namelist init										      %stat();
+				
+elseif		: exp THEN block elseif
+				| exp THEN block END; 
+
+fieldlist 	: field:a                                                %fieldlist( a )
+				| field:a fieldsep fieldlist:b                           %fieldlist( a, b );
+
+tableconstructor : LBRACE RBRACE                                     %tableconstructor()
+				     | LBRACE fieldlist:a RBRACE                         %tableconstructor( a );                        
+
+parlist 		: NAME:s													            %parlist( s )
+				| NAME:s COMMA parlist:a									      %parlist( s, a ) 
+				| ELIPSE;
+		   		
+init			: ASSIGN explist;
+
+explist		: exp:a COMMA explist:b                                  %explist( a,b )
+				| exp:a                                                  %explist( a );
+				
+exp			: NIL:a                                                  %Atom( a ) 
+            | FALSE:a                                                %Atom( a ) 
+            | TRUE:a                                                 %Atom( a ) 
+            | NUMBER:a                                               %Atom( a )
+            | LITERAL:a                                              %Atom( a )
+				| function:a                                             %exp( a ) 
+				| prefixexp:a                                            %exp( a ) 
+				| tableconstructor:a                                     %ExpTableDec( a )
+				| exp:a binop:b exp:c                                    %Binop( a,b,c ) 
+				| unop:a exp:b                                           %Unop( a,b );
+				
+functioncall   : prefixexp:a arg:b            							   %functioncall( a, b )
+	   			| prefixexp:a COLON NAME arg:b                        %functioncall( a, b );
+				
+prefixexp	: var:a                                                  %prefixexp( a )
+				| functioncall:a                                         %prefixexp( a )   
+				| LPAREN exp:a RPAREN                                    %prefixexp( a );
+
+namelist		: NAME
+				| NAME COMMA namelist;
+
+varlist		: var:a COMMA varlist:b                                  %varlist( a, b )
+				| var:a                                                  %varlist( a );            
+				
+var			: NAME:a                                                 %var( a ) 
+				| prefixexp:a LBRACK exp:b RBRACK                        %TableRef( a, b ) 
+				| prefixexp:a DOT NAME:b                                 %PackageRef( a, b );                                     
+
+funcname 	: NAME DOT funcname
+				| NAME COLON NAME
+				| NAME:s													            %funcname( s );		
+				
+funcbody		: LPAREN RPAREN block:a END:c									   %funcbody( a, c )
+				| LPAREN parlist:a RPAREN block:b END:c						%funcbody( b, a, c )
+				| LPAREN parlist:a RPAREN END
+				| LPAREN RPAREN END;
+
+function 	: FUNCTION funcbody:a                                    %function( a );
+
+arg			: LPAREN RPAREN                                          
+				| LPAREN explist:a RPAREN                                %arg( a )
+				| tableconstructor:a                                     %arg( a )
+				| LITERAL;	
+				
+unop			: MINUS                                          
+            | NOT
+            | POUND;                                                  		
+	
+binop			: PLUS                                             
+            | MINUS 
+            | MULT 
+            | MOD
+            | DIVIDE 
+            | EXP 
+            | CONCAT
+            | LT 
+            | GT 
+            | GE 
+	 			| LE 
+	 			| EQ 
+	 			| NEQ;
+
+fieldsep		: COMMA 
+            | SEMICOLON;
+
+field			: RBRACK exp:a LBRACK ASSIGN exp:b                       %FieldExpAssign( a, b )
+				| NAME:a ASSIGN exp:b                                    %FieldAssign( a, b )
+				| exp:a                                                  %field( a );
+				
+
+				
+				
+					
+				 
