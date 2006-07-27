@@ -477,99 +477,99 @@
 ///////////////////////////// GRAMMAR PRODUCTIONS /////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-chunk			: stat:a													            %chunk( a )									
-				| stat:a SEMICOLON											      %chunk( a )
-				| stat:a chunk:b											         %chunk( a, b )
-				| stat:a SEMICOLON chunk:b									      %chunk( a, b );
+chunk			: stat:a												   %chunk( a )									
+				| stat:a SEMICOLON										   %chunk( a )
+				| stat:a chunk:b										   %chunk( a, b )
+				| stat:a SEMICOLON chunk:b								   %chunk( a, b );
 				
-block			: chunk:a													         %block( a );
+block			: chunk:a												   %block( a );
 
-stat			: varlist:a ASSIGN explist:b									   %Assignment( a, b )													     									
-				| prefixexp                                              %stat()	
-				| DO block END												         %stat()
-				| WHILE exp DO block END									      %stat()
-				| REPEAT block UNTIL exp									      %stat()
-				| IF exp THEN block END										      %stat()
-				| IF exp THEN block ELSEIF elseif						      %stat()
-				| IF exp THEN block ELSE block END						      %stat()
-				| RETURN													            %stat()
-				| RETURN explist:a											      %Retval( a )
-				| BREAK														         %stat()
-				| FOR NAME ASSIGN exp COMMA exp DO block END				   %stat()
-				| FOR NAME ASSIGN exp COMMA exp COMMA exp DO block END	%stat()
-				| FOR namelist IN explist DO block END						   %stat()
-				| FUNCTION funcname:a funcbody:b							      %FuncDecl( a, b )	
-				| LOCAL FUNCTION NAME:s funcbody:b 							   %LocalFuncDecl( s, b )
-				| LOCAL namelist											         %stat()
-				| LOCAL namelist init										      %stat();
+stat			: varlist:a ASSIGN explist:b							   %Assignment( a, b )													     									
+				| prefixexp                                                %stat()	
+				| DO block END											   %stat()
+				| WHILE exp DO block END								   %stat()
+				| REPEAT block UNTIL exp								   %stat()
+				| IF exp THEN block END									   %stat()
+				| IF exp THEN block ELSEIF elseif						   %stat()
+				| IF exp THEN block ELSE block END						   %stat()
+				| RETURN												   %stat()
+				| RETURN explist:a										   %Retval( a )
+				| BREAK													   %stat()
+				| FOR NAME ASSIGN exp COMMA exp DO block END			   %stat()
+				| FOR NAME ASSIGN exp COMMA exp COMMA exp DO block END	   %stat()
+				| FOR namelist IN explist DO block END					   %stat()
+				| FUNCTION funcname:a funcbody:b						   %FuncDecl( a, b )	
+				| LOCAL FUNCTION NAME:s funcbody:b 						   %LocalFuncDecl( s, b )
+				| LOCAL namelist										   %stat()
+				| LOCAL namelist init									   %stat();
 				
 elseif		: exp THEN block elseif
 				| exp THEN block END; 
 
-fieldlist 	: field:a                                                %fieldlist( a )
-				| field:a fieldsep fieldlist:b                           %fieldlist( a, b );
+fieldlist 	: field:a                                                      %fieldlist( a )
+				| field:a fieldsep fieldlist:b                             %fieldlist( a, b );
 
-tableconstructor : LBRACE RBRACE                                     %tableconstructor()
-				     | LBRACE fieldlist:a RBRACE                         %tableconstructor( a );                        
+tableconstructor : LBRACE RBRACE                                           %tableconstructor()
+				     | LBRACE fieldlist:a RBRACE                           %tableconstructor( a );                        
 
-parlist 		: NAME:s													            %parlist( s )
-				| NAME:s COMMA parlist:a									      %parlist( s, a ) 
+parlist 		: NAME:s												   %parlist( s )
+				| NAME:s COMMA parlist:a								   %parlist( s, a ) 
 				| ELIPSE;
 		   		
 init			: ASSIGN explist;
 
-explist		: exp:a COMMA explist:b                                  %explist( a,b )
-				| exp:a                                                  %explist( a );
+explist		: exp:a COMMA explist:b                                        %explist( a,b )
+			| exp:a                                                    %explist( a );
 				
-exp			: NIL:a                                                  %Atom( a ) 
-            | FALSE:a                                                %Atom( a ) 
-            | TRUE:a                                                 %Atom( a ) 
-            | NUMBER:a                                               %Atom( a )
-            | LITERAL:a                                              %Atom( a )
-				| function:a                                             %exp( a ) 
-				| prefixexp:a                                            %exp( a ) 
-				| tableconstructor:a                                     %ExpTableDec( a )
-				| exp:a binop:b exp:c                                    %Binop( a,b,c ) 
-				| unop:a exp:b                                           %Unop( a,b );
+exp			: NIL:a                                                        %Atom( a ) 
+            | FALSE:a                                                      %Atom( a ) 
+            | TRUE:a                                                       %Atom( a ) 
+            | NUMBER:a                                                     %Atom( a )
+            | LITERAL:a                                                    %Atom( a )
+			| function:a                                               %exp( a ) 
+			| prefixexp:a                                              %exp( a ) 
+			| tableconstructor:a                                       %ExpTableDec( a )
+			| exp:a binop:b exp:c                                      %Binop( a,b,c ) 
+			| unop:a exp:b                                             %Unop( a,b );
 				
 functioncall   : prefixexp:a arg:b            							   %functioncall( a, b )
-	   			| prefixexp:a COLON NAME arg:b                        %functioncall( a, b );
+	   		   | prefixexp:a COLON NAME arg:b                             %functioncall( a, b );
 				
 prefixexp	: var:a                                                  %prefixexp( a )
-				| functioncall:a                                         %prefixexp( a )   
-				| LPAREN exp:a RPAREN                                    %prefixexp( a );
+			| functioncall:a                                         %prefixexp( a )   
+			| LPAREN exp:a RPAREN                                    %prefixexp( a );
 
-namelist		: NAME
-				| NAME COMMA namelist;
+namelist	: NAME
+			| NAME COMMA namelist;
 
 varlist		: var:a COMMA varlist:b                                  %varlist( a, b )
-				| var:a                                                  %varlist( a );            
+			| var:a                                                  %varlist( a );            
 				
 var			: NAME:a                                                 %var( a ) 
-				| prefixexp:a LBRACK exp:b RBRACK                        %TableRef( a, b ) 
-				| prefixexp:a DOT NAME:b                                 %PackageRef( a, b );                                     
+			| prefixexp:a LBRACK exp:b RBRACK                        %TableRef( a, b ) 
+			| prefixexp:a DOT NAME:b                                 %PackageRef( a, b );                                     
 
 funcname 	: NAME DOT funcname
-				| NAME COLON NAME
-				| NAME:s													            %funcname( s );		
+			| NAME COLON NAME
+			| NAME:s													            %funcname( s );		
 				
-funcbody		: LPAREN RPAREN block:a END:c									   %funcbody( a, c )
-				| LPAREN parlist:a RPAREN block:b END:c						%funcbody( b, a, c )
-				| LPAREN parlist:a RPAREN END
-				| LPAREN RPAREN END;
+funcbody	: LPAREN RPAREN block:a END:c								%funcbody( a, c )
+			| LPAREN parlist:a RPAREN block:b END:c						%funcbody( b, a, c )
+			| LPAREN parlist:a RPAREN END
+			| LPAREN RPAREN END;
 
 function 	: FUNCTION funcbody:a                                    %function( a );
 
 arg			: LPAREN RPAREN                                          
-				| LPAREN explist:a RPAREN                                %arg( a )
-				| tableconstructor:a                                     %arg( a )
-				| LITERAL;	
+			| LPAREN explist:a RPAREN                                %arg( a )
+			| tableconstructor:a                                     %arg( a )
+			| LITERAL;	
 				
-unop			: MINUS                                          
+unop		: MINUS                                          
             | NOT
             | POUND;                                                  		
 	
-binop			: PLUS                                             
+binop		: PLUS                                             
             | MINUS 
             | MULT 
             | MOD
@@ -579,16 +579,16 @@ binop			: PLUS
             | LT 
             | GT 
             | GE 
-	 			| LE 
-	 			| EQ 
-	 			| NEQ;
+	 		| LE 
+	 		| EQ 
+	 		| NEQ;
 
-fieldsep		: COMMA 
+fieldsep	: COMMA 
             | SEMICOLON;
 
-field			: RBRACK exp:a LBRACK ASSIGN exp:b                       %FieldExpAssign( a, b )
-				| NAME:a ASSIGN exp:b                                    %FieldAssign( a, b )
-				| exp:a                                                  %field( a );
+field		: RBRACK exp:a LBRACK ASSIGN exp:b                       %FieldExpAssign( a, b )
+			| NAME:a ASSIGN exp:b                                    %FieldAssign( a, b )
+			| exp:a                                                  %field( a );
 				
 
 				

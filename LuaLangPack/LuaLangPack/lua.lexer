@@ -22,8 +22,8 @@
  "+"			      %PLUS
  "-"			      %MINUS
  "*"			      %MULT
- "#"              %POUND
- "%"              %MOD
+ "#"                  %POUND
+ "%"                  %MOD
  "/"			      %DIVIDE
  "^"			      %EXP
  "=="			      %EQ
@@ -32,41 +32,41 @@
  "<="			      %LE
  ">"			      %GT
  ">="			      %GE
- "and"			   %AND
+ "and"			      %AND
  "or"			      %OR
- "not"            %NOT
+ "not"                %NOT
  "="			      %ASSIGN
  "if"			      %IF
- "then"			   %THEN
- "else"			   %ELSE
- "elseif"		   %ELSEIF
+ "then"			      %THEN
+ "else"			      %ELSE
+ "elseif"		      %ELSEIF
  "end"  		      %END
  "while"		      %WHILE
- "for"			   %FOR
+ "for"			      %FOR
  "do"			      %DO
  "in"			      %IN
  "break"		      %BREAK
- "nil"			   %NIL
- "function"		   %FUNCTION
- "repeat"		   %REPEAT
+ "nil"			      %NIL
+ "function"		      %FUNCTION
+ "repeat"		      %REPEAT
  "until"		      %UNTIL
- "return"		   %RETURN
+ "return"		      %RETURN
  "local"		      %LOCAL
- "true"			   %TRUE
+ "true"			      %TRUE
  "false"		      %FALSE
  ".."			      %CONCAT
- "..."			   %ELIPSE
+ "..."			      %ELIPSE
  [a-zA-Z][A-Za-z0-9_]*	 %NAME		{ s = yytext; }
  [0-9]+([.][0-9])?[0-9]* %NUMBER    { n = Convert.ToDouble(yytext); }
 
 
- \" 				      { yybegin("LITERAL"); yyl.str = "\"";}
+ \" 				 { yybegin("LITERAL"); yyl.str = "\"";}
 <LITERAL>  \\\"      { yyl.str += yytext; }
 <LITERAL>  [^\"]     { yyl.str += yytext; }
-<LITERAL>  \"		   { yybegin("YYINITIAL"); yyl.yytext = yyl.str + "\""; return new LITERAL(yyl.yytext); }
+<LITERAL>  \"		 { yybegin("YYINITIAL"); yyl.yytext = yyl.str + "\""; return new LITERAL(yyl.yytext); }
 
-"--"			         { yybegin("COMMENT"); }
-<COMMENT>	.	      ;
-<COMMENT>   \n	      { yybegin("YYINITIAL"); ++yyl.pos; return new COMMENT(); }
+"--"			{ yybegin("COMMENT"); }
+<COMMENT>	    [^\n\r]	{ }
+<COMMENT>	    \n|\r	{ yybegin("YYINITIAL"); return new COMMENT(); }
 
  
