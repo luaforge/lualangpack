@@ -10,4 +10,14 @@
     <StartProgram>E:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <StartProgram>D:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp /noVSIP</StartArguments>
+    <StartAction>Program</StartAction>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <StartProgram>E:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp</StartArguments>
+    <StartAction>Program</StartAction>
+  </PropertyGroup>
 </Project>

@@ -1,4 +1,10 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -24,7 +30,7 @@
     <SignAssembly>true</SignAssembly>
     <ProjectGuid>{8CC86B04-B56C-49A7-97A3-5ED737B68ED2}</ProjectGuid>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>Debug\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
@@ -45,7 +51,7 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>Release\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
@@ -134,16 +140,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\logo.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="NativeHierarchyWrapper">
-      <Guid>{9AA6D9FE-55CC-4A02-B6EF-0448C48B939D}</Guid>
-      <VersionMajor>8</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-    </COMReference>
-  </ItemGroup>
   <PropertyGroup>
     <TargetRegistryRoot>Software\Microsoft\VisualStudio\8.0Exp</TargetRegistryRoot>
     <RegisterOutputPackage>true</RegisterOutputPackage>
@@ -152,6 +148,12 @@
   <PropertyGroup>
     <ProjectBasePath Condition="'$(_NTDRIVE)'==''">p:\VisualStudioIntegration\Common\Source\CSharp\Project</ProjectBasePath>
     <ProjectBasePath Condition="'$(_NTDRIVE)'!=''">p:\VisualStudioIntegration\Common\Source\CSharp\Project</ProjectBasePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <!-- This import the files which makes up the project base classes -->
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
