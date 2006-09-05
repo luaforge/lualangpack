@@ -17,19 +17,13 @@ namespace Vsip.LuaLangPack
       {
       }
 
-      public override void ProcessHiddenRegions(System.Collections.ArrayList hiddenRegions)
+      public override void OnIdle(bool periodic)
       {
-         IVsHiddenTextSession ht = GetHiddenTextSession();
-         if (ht != null)
-         {
-              base.ProcessHiddenRegions(hiddenRegions);            
-         }
+         // Fix for MS bug on first time parse
+         if( this.LastParseTime == Int32.MaxValue )
+            this.LastParseTime = this.LanguageService.Preferences.CodeSenseDelay;
 
-      }
-
-      public override void  OnHiddenRegionChange(IVsHiddenRegion region, HIDDEN_REGION_EVENT evt, int fBufferModifiable)
-      {
- 	      base.OnHiddenRegionChange(region, evt, fBufferModifiable);
+         base.OnIdle(periodic);
       }
 	}
 }

@@ -168,11 +168,6 @@
                     Name='LuaLan~1.dll' 
                     src='./Release/LuaLangPack.dll' />
                   
-                  <File Id='NativeHierarchyWrapper' 
-                    LongName='Interop.NativeHierarchyWrapper.dll' 
-                    Name='Intero~1.dll' 
-                    src='./Release/Interop.NativeHierarchyWrapper.dll' />
-                  
                   <File Id='Tools.dll' 
                     LongName='Tools.dll' 
                     Name='Tools.dll' 
@@ -182,11 +177,6 @@
                     LongName='logo.ico' 
                     Name='logo.ico' 
                     src='./Resources/logo.ico' />
-
-                  <File Id="HierWrapper" 
-                        Name="NATIVE_1.DLL" 
-                        LongName="NativeHierarchyWrapper.dll" 
-                        src="d:\Program Files\Visual Studio 2005 SDK\2006.02\VisualStudioIntegration\Common\Source\CSharp\NativeHierarchyWrapper\Release\NativeHierarchyWrapper.dll" />
                   
                   <Registry Id="registry0" Root="HKCR" 
                             Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" 
@@ -218,21 +208,7 @@
                   <Registry Id="registry9" Root="HKCR" 
                             Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\HELPDIR" 
                             Value="[PRODDIR_2005]Lua" Type="string" />
-                  <Registry Id="registry10" Root="HKCR" Key="VisualStudio.NativeHierarchyWrapper" 
-                            Value="VisualStudio NativeHierarchyWrapper" Type="string" />
-                  <Registry Id="registry11" Root="HKCR" 
-                            Key="VisualStudio.NativeHierarchyWrapper\CLSID" 
-                            Value="{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" Type="string" />
-                  <Registry Id="registry12" Root="HKCR" 
-                            Key="VisualStudio.NativeHierarchyWrapper\CurVer" 
-                            Value="VisualStudio.NativeHierarchyWrapper.8.0" Type="string" />
-                  <Registry Id="registry13" Root="HKCR" 
-                            Key="VisualStudio.NativeHierarchyWrapper.8.0" 
-                            Value="VisualStudio NativeHierarchyWrapper" Type="string" />
-                  <Registry Id="registry14" Root="HKCR" 
-                            Key="VisualStudio.NativeHierarchyWrapper.8.0\CLSID" 
-                            Value="{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" Type="string" />
-
+               
                   <Registry Id='LuaReg1' Root='HKCR' Key='.lua' Action='write'
                      Type='string' Value='VisualStudio.lua.8.0' />
                   <Registry Id='LuaReg2' Root='HKCR' Key='VisualStudio.lua.8.0' Action='write'

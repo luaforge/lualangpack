@@ -11,10 +11,16 @@
 	public chunk( stat a ){ s = a; }
 	public chunk( stat a, chunk b ){ s = a; c = b; }
 	public void FillScope( LuaScope scope ) { 
-	   if( s != null )
-	      s.FillScope( scope );
-	   if( c != null )
-	      c.FillScope( scope );   
+	   if( s != null ) {
+	      LuaScope nested = new LuaScope( scope );
+	      s.FillScope( nested );
+	      scope.nested.AddLast( nested );
+	   }
+	   if( c != null ) {
+	      LuaScope nested = new LuaScope( scope );
+	      c.FillScope( nested );  
+	      scope.nested.AddLast( nested );
+	   }
 	}
 }
 
@@ -24,9 +30,7 @@
 	chunk c;
 	public block( chunk a ){ c = a; }
 	public void FillScope( LuaScope scope ){
-	   LuaScope nested = new LuaScope( scope );
-	   c.FillScope( nested );
-	   scope.nested.AddLast( nested );
+	   c.FillScope( scope );
 	}
 }
 
@@ -60,7 +64,7 @@
 
 ///////////////////////////// FUNCTION NAME ///////////////////////////////////
 %symbol funcname {
-	NAME name;
+	public NAME name;
 	public funcname( NAME a ){ name = a; }
 	public void FillScope( LuaScope scope ){
 	}
@@ -73,6 +77,8 @@
 	NAME name;
 	public parlist( NAME a ){ name = a; }
 	public parlist( NAME a, parlist b ){ name = a; p = b; }
+	public void FillScope( LuaScope s ) {
+	}
 }
 
 
@@ -81,11 +87,20 @@
 	block b;
 	parlist p;
 	END e;
-	public funcbody( block a, END c ){ b = a; e = c; }
-	public funcbody( block a, parlist pl, END c ){ b = a; p = pl; e = c; }
-	public void FillScope( LuaScope s ){
+	RPAREN paren;
+	public funcbody( block a, END c, RPAREN d ){ b = a; e = c; paren = d; }
+	public funcbody( block a, parlist pl, END c, RPAREN d ){ b = a; p = pl; e = c; paren = d; }
+	public funcbody( parlist pl, RPAREN d, END c ){ p = pl; paren = d; e = c; }
+	public funcbody( RPAREN d, END c ){ paren = d; e = c; } 
+	public void FillScope( LuaScope s ){	          
+       s.beginLine = paren.Line;
+	   s.beginIndx = paren.Position;
 	   s.endLine = e.Line;
-	   b.FillScope( s );
+	   s.endIndx = e.Position + 3;
+	   
+	   if( b != null ){
+	        b.FillScope( s );
+	   }
 	}
 }
 
@@ -413,6 +428,16 @@
 }
 
 
+///////////////////////////// INIT ////////////////////////////////////////////
+%symbol init {
+    explist e;
+    public init( explist a ){ e = a; }
+    public void FillScope( LuaScope s ){
+        e.FillScope( s );
+    }  
+}
+
+
 ///////////////////////////// STATMENT ////////////////////////////////////////
 %symbol stat {
 	public stat(){}
@@ -427,9 +452,20 @@
       e.FillScope( s, v );
    }
 }
+%node LocalInit : stat {
+   namelist n;
+   init i;
+   public LocalInit( namelist a, init b ){ n = a; i = b; }
+   public override void FillScope( LuaScope s ){
+      i.FillScope( s );
+   }
+}
 %node Retval : stat {
    private explist e;
    public Retval( explist a ){ e = a; }
+   public override void FillScope( LuaScope scope ){
+        e.FillScope( scope );
+   }
 }
 %node FuncDecl : stat
 {
@@ -437,8 +473,6 @@
    funcbody body;
    public FuncDecl( funcname a, funcbody b ){ fname = a; body = b; }
    public override void FillScope( LuaScope scope ){
-      scope.beginLine = fname.Line;
-      fname.FillScope( scope );
       body.FillScope( scope );
    }
 }
@@ -448,7 +482,6 @@
 	NAME name;
 	public LocalFuncDecl( NAME a, funcbody b ){ name = a; body = b; }
 	public override void FillScope( LuaScope scope ){	   
-	   scope.beginLine = name.Line;   
 	   body.FillScope( scope );
 	}
 }
@@ -488,9 +521,10 @@ stat			: varlist:a ASSIGN explist:b							   %Assignment( a, b )
 				| prefixexp                                                %stat()	
 				| DO block END											   %stat()
 				| WHILE exp DO block END								   %stat()
+				| WHILE exp DO END								           %stat()
 				| REPEAT block UNTIL exp								   %stat()
 				| IF exp THEN block END									   %stat()
-				| IF exp THEN block ELSEIF elseif						   %stat()
+				| IF exp THEN block ELSEIF elseif END					   %stat()
 				| IF exp THEN block ELSE block END						   %stat()
 				| RETURN												   %stat()
 				| RETURN explist:a										   %Retval( a )
@@ -501,68 +535,69 @@ stat			: varlist:a ASSIGN explist:b							   %Assignment( a, b )
 				| FUNCTION funcname:a funcbody:b						   %FuncDecl( a, b )	
 				| LOCAL FUNCTION NAME:s funcbody:b 						   %LocalFuncDecl( s, b )
 				| LOCAL namelist										   %stat()
-				| LOCAL namelist init									   %stat();
+				| LOCAL namelist:a init:b								   %LocalInit( a, b );
 				
-elseif		: exp THEN block elseif
-				| exp THEN block END; 
+elseif		    : exp THEN block ELSEIF elseif
+                | exp THEN block ELSE block
+				| exp THEN block; 
 
-fieldlist 	: field:a                                                      %fieldlist( a )
+fieldlist 	    : field:a                                                  %fieldlist( a )
 				| field:a fieldsep fieldlist:b                             %fieldlist( a, b );
 
 tableconstructor : LBRACE RBRACE                                           %tableconstructor()
-				     | LBRACE fieldlist:a RBRACE                           %tableconstructor( a );                        
+				 | LBRACE fieldlist:a RBRACE                               %tableconstructor( a );                        
 
 parlist 		: NAME:s												   %parlist( s )
 				| NAME:s COMMA parlist:a								   %parlist( s, a ) 
 				| ELIPSE;
 		   		
-init			: ASSIGN explist;
+init			: ASSIGN explist:a                                         %init( a );  
 
 explist		: exp:a COMMA explist:b                                        %explist( a,b )
-			| exp:a                                                    %explist( a );
+			| exp:a                                                        %explist( a );
 				
 exp			: NIL:a                                                        %Atom( a ) 
             | FALSE:a                                                      %Atom( a ) 
             | TRUE:a                                                       %Atom( a ) 
             | NUMBER:a                                                     %Atom( a )
             | LITERAL:a                                                    %Atom( a )
-			| function:a                                               %exp( a ) 
-			| prefixexp:a                                              %exp( a ) 
-			| tableconstructor:a                                       %ExpTableDec( a )
-			| exp:a binop:b exp:c                                      %Binop( a,b,c ) 
-			| unop:a exp:b                                             %Unop( a,b );
+			| function:a                                                   %exp( a ) 
+			| prefixexp:a                                                  %exp( a ) 
+			| tableconstructor:a                                           %ExpTableDec( a )
+			| exp:a binop:b exp:c                                          %Binop( a,b,c ) 
+			| unop:a exp:b                                                 %Unop( a,b );
 				
 functioncall   : prefixexp:a arg:b            							   %functioncall( a, b )
-	   		   | prefixexp:a COLON NAME arg:b                             %functioncall( a, b );
+	   		   | prefixexp:a COLON NAME arg:b                              %functioncall( a, b );
 				
-prefixexp	: var:a                                                  %prefixexp( a )
-			| functioncall:a                                         %prefixexp( a )   
-			| LPAREN exp:a RPAREN                                    %prefixexp( a );
+prefixexp	: var:a                                                        %prefixexp( a )
+			| functioncall:a                                               %prefixexp( a )   
+			| LPAREN exp:a RPAREN                                          %prefixexp( a );
 
 namelist	: NAME
 			| NAME COMMA namelist;
 
-varlist		: var:a COMMA varlist:b                                  %varlist( a, b )
-			| var:a                                                  %varlist( a );            
+varlist		: var:a COMMA varlist:b                                        %varlist( a, b )
+			| var:a                                                        %varlist( a );            
 				
-var			: NAME:a                                                 %var( a ) 
-			| prefixexp:a LBRACK exp:b RBRACK                        %TableRef( a, b ) 
-			| prefixexp:a DOT NAME:b                                 %PackageRef( a, b );                                     
+var			: NAME:a                                                       %var( a ) 
+			| prefixexp:a LBRACK exp:b RBRACK                              %TableRef( a, b ) 
+			| prefixexp:a DOT NAME:b                                       %PackageRef( a, b );                                     
 
 funcname 	: NAME DOT funcname
 			| NAME COLON NAME
-			| NAME:s													            %funcname( s );		
+			| NAME:s												       %funcname( s );		
 				
-funcbody	: LPAREN RPAREN block:a END:c								%funcbody( a, c )
-			| LPAREN parlist:a RPAREN block:b END:c						%funcbody( b, a, c )
-			| LPAREN parlist:a RPAREN END
-			| LPAREN RPAREN END;
+funcbody	: LPAREN RPAREN:b block:a END:c								   %funcbody( a, c, b )
+			| LPAREN parlist:a RPAREN:d block:b END:c					   %funcbody( b, a, c, d )
+			| LPAREN parlist:a RPAREN:b END:c                              %funcbody( a, b, c )
+			| LPAREN RPAREN:a END:b                                        %funcbody( a, b );
 
-function 	: FUNCTION funcbody:a                                    %function( a );
+function 	: FUNCTION funcbody:a                                          %function( a );
 
 arg			: LPAREN RPAREN                                          
-			| LPAREN explist:a RPAREN                                %arg( a )
-			| tableconstructor:a                                     %arg( a )
+			| LPAREN explist:a RPAREN                                      %arg( a )
+			| tableconstructor:a                                           %arg( a )
 			| LITERAL;	
 				
 unop		: MINUS                                          
@@ -581,14 +616,16 @@ binop		: PLUS
             | GE 
 	 		| LE 
 	 		| EQ 
+	 		| AND
+	 		| OR
 	 		| NEQ;
 
 fieldsep	: COMMA 
             | SEMICOLON;
 
-field		: RBRACK exp:a LBRACK ASSIGN exp:b                       %FieldExpAssign( a, b )
-			| NAME:a ASSIGN exp:b                                    %FieldAssign( a, b )
-			| exp:a                                                  %field( a );
+field		: RBRACK exp:a LBRACK ASSIGN exp:b                            %FieldExpAssign( a, b )
+			| NAME:a ASSIGN exp:b                                         %FieldAssign( a, b )
+			| exp:a                                                       %field( a );
 				
 
 				

@@ -115,6 +115,7 @@
     <Compile Include="LuaScanner.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="source.cs" />
     <Compile Include="VSPackage.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

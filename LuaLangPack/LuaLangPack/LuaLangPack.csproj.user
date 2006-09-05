@@ -20,4 +20,7 @@
     <StartArguments>/rootsuffix Exp</StartArguments>
     <StartAction>Program</StartAction>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <StartArguments>/rootsuffix Exp /noVSIP</StartArguments>
+  </PropertyGroup>
 </Project>

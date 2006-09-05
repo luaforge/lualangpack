@@ -114,8 +114,7 @@ namespace Vsip.LuaLangPack
             }
 
             base.Dispose(disposing);
-        }
-
+         }
 
         #region IOleComponent Members
 

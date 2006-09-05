@@ -15,6 +15,7 @@ namespace Vsip.LuaLangPack
 
       private Hashtable tokenInf = new Hashtable();
       private Lexer lexer = new tokens();
+      private string srcBuf;
 
       public LuaScanner()
       {
@@ -86,33 +87,49 @@ namespace Vsip.LuaLangPack
 
       public bool ScanTokenAndProvideInfoAboutIt(TokenInfo tokenInfo, ref int state)
       {
-         TOKEN tok = lexer.Next();
-         if (tok == null)
-            return false;
+         // Handle comments as a special case. We don't tokenize them in the lexer
+         // since we don't want to send them to the parser.
+         int yypos = lexer.yypos;
          
-         if (tokenInf.Contains(tok.yyname))
+         TOKEN tok = lexer.Next();
+         if (tok != null)
          {
-            TokenInfo inf = (TokenInfo)tokenInf[tok.yyname];
-            tokenInfo.Color = inf.Color;
-            tokenInfo.Type = inf.Type;
-            tokenInfo.Trigger = inf.Trigger;
+             if (tokenInf.Contains(tok.yyname))
+             {
+                 TokenInfo inf = (TokenInfo)tokenInf[tok.yyname];
+                 tokenInfo.Color = inf.Color;
+                 tokenInfo.Type = inf.Type;
+                 tokenInfo.Trigger = inf.Trigger;
+             }
+             else
+             {
+                 tokenInfo.Color = TokenColor.Text;
+                 tokenInfo.Type = TokenType.Unknown;
+                 tokenInfo.Trigger = TokenTriggers.None;
+             }
+
+             tokenInfo.StartIndex = tok.Position;
+             tokenInfo.EndIndex = lexer.yypos - 1;
+         }
+         else if (yypos < srcBuf.Length && srcBuf.Contains("--"))
+         {
+             tokenInfo.StartIndex = srcBuf.IndexOf("--", yypos);
+             tokenInfo.EndIndex = srcBuf.Length;
+             TokenInfo inf = (TokenInfo)tokenInf["COMMENT"];
+             tokenInfo.Color = inf.Color;
+             tokenInfo.Type = inf.Type;
+             tokenInfo.Trigger = inf.Trigger;
          }
          else
-         {
-            tokenInfo.Color = TokenColor.Text;
-            tokenInfo.Type = TokenType.Unknown;
-            tokenInfo.Trigger = TokenTriggers.None;
-         }
-
-         tokenInfo.StartIndex = tok.Position;
-         tokenInfo.EndIndex = lexer.yypos - 1;
-
+             return false;
+         
          return true;
       }
 
       public void SetSource(string source, int offset)
       {
          lexer.Start(source);
+         srcBuf = source;
          while (lexer.yypos < offset)
             lexer.Advance();
       }

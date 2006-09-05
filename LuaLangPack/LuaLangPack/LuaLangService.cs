@@ -21,7 +21,7 @@ public class LuaScope
 {
    public LuaScope( LuaScope parent ) {
       m_parent = parent;
-      beginLine = 0; endLine = 0; 
+      beginLine = -1; endLine = -1; beginIndx = -1; endIndx = -1;
    }
 
    // Searches through current and parent scopes for given table (Lua has lexical scoping)
@@ -38,16 +38,11 @@ public class LuaScope
       if (beginLine != endLine)
       {
          TextSpan span = new TextSpan();
-         NewHiddenRegion region = new NewHiddenRegion();
-         span.iStartLine = beginLine;
-         span.iEndLine = endLine;
-         span.iEndIndex = 0;
-         span.iStartIndex = 0;
-         region.dwBehavior = (uint)HIDDEN_REGION_BEHAVIOR.hrbEditorControlled;
-         region.dwState = (uint)HIDDEN_REGION_STATE.hrsExpanded;
-         region.iType = (int)HIDDEN_REGION_TYPE.hrtCollapsible;
-         region.tsHiddenText = span;
-         sink.AddHiddenRegion(region);
+         span.iStartLine = beginLine - 1;
+         span.iEndLine = endLine - 1;
+         span.iEndIndex = endIndx - 1;
+         span.iStartIndex = beginIndx;
+         sink.AddHiddenRegion(span);
       }
             
       foreach( LuaScope scope in nested )
@@ -58,6 +53,8 @@ public class LuaScope
 
    public int beginLine;
    public int endLine;
+   public int beginIndx;
+   public int endIndx;
    public LinkedList<LuaScope> nested = new LinkedList<LuaScope>();
    public Hashtable tables = new Hashtable();
 
@@ -71,25 +68,21 @@ namespace Vsip.LuaLangPack
    {
       private LuaScanner m_scanner;
       private LuaAuthScope m_authScope = new LuaAuthScope();
-//      private LuaSource m_source;
+      private LuaSource m_source;
 
-//      public override Source CreateSource(IVsTextLines buffer)
-//      {
-//         m_source = new LuaSource(this, buffer, GetColorizer(buffer));
-//         return (m_source);
- //     }
+      public override Source CreateSource(IVsTextLines buffer)
+      {
+         m_source = new LuaSource(this, buffer, GetColorizer(buffer));
+         return (m_source);
+      }
 
       public override LanguagePreferences GetLanguagePreferences()
       {
          LanguagePreferences langPref = new LanguagePreferences();
          langPref.EnableCodeSense = true;
-         langPref.EnableCommenting = false;
-         langPref.EnableFormatSelection = false;
          langPref.EnableAsyncCompletion = true;
          langPref.AutoOutlining = true;
-         langPref.EnableMatchBraces = false;
-         langPref.EnableMatchBracesAtCaret = false;
-         langPref.EnableQuickInfo = false;
+         langPref.MaxRegionTime = 1000000;
          return langPref;
       }
 
@@ -108,8 +101,6 @@ namespace Vsip.LuaLangPack
 
       public override AuthoringScope ParseSource(ParseRequest req)
       {
-         req.Sink.ProcessHiddenRegions = false;
-
          if (req.Reason == ParseReason.DisplayMemberList)
          {
             
@@ -117,15 +108,23 @@ namespace Vsip.LuaLangPack
          else if (req.Reason == ParseReason.Check) // parse all code passed to us
          {
             LuaScope scope = new LuaScope( null );
-            Parser p = new syntax(new yysyntax());
+            Parser p = new syntax();
             SYMBOL ast;
             ast = p.Parse(req.Text);
-            if (ast.yyname == "chunk")
+
+            if (ast == null)
+                return m_authScope;
+
+            if (ast.yyname == "error")
             {
-               chunk node = (chunk)ast;
-               node.FillScope(scope);
-               scope.AddRegions(req.Sink);
-               req.Sink.ProcessHiddenRegions = true;
+                Console.Write("Parse Error: " + ast.Pos);
+            }
+            else if (ast.yyname == "chunk")
+            {
+                chunk node = (chunk)ast;
+                node.FillScope(scope);
+                scope.AddRegions(req.Sink);
+                req.Sink.ProcessHiddenRegions = true;
             }
          }
 
