@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>
 
-   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.3'>
+   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.5'>
 
       <Package Id='14DADF49-CFF6-436c-B3E9-E3320DF3B0A6'/>
       <Media Id='1' Cabinet='product.cab' EmbedCab='yes' />
@@ -84,9 +84,9 @@
                         Value="{306766fb-5a6c-3d49-a65c-531c5da476a4}" Type="string">
                         <Registry Name="Package" Value="{b4d22fe4-9555-4288-a8f9-70ed3119eaad}" Type="string" />
                         <Registry Name="LangResID" Value="103" Type="integer" />
-                        <Registry Name="AutoOutlining" Value="0" Type="integer" />
-                        <Registry Name="EnableAsyncCompletion" Value="0" Type="integer" />
-                        <Registry Name="CodeSense" Value="0" Type="integer" />
+                        <Registry Name="AutoOutlining" Value="1" Type="integer" />
+                        <Registry Name="EnableAsyncCompletion" Value="1" Type="integer" />
+                        <Registry Name="CodeSense" Value="1" Type="integer" />
                      </Registry>
                      <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\8.0\Languages\File Extensions\.lua"
                         Value="{306766fb-5a6c-3d49-a65c-531c5da476a4}" Type="string">
@@ -176,39 +176,8 @@
                   <File Id='LuaLangIcon' 
                     LongName='logo.ico' 
                     Name='logo.ico' 
-                    src='./Resources/logo.ico' />
-                  
-                  <Registry Id="registry0" Root="HKCR" 
-                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}" 
-                            Value="VisualStudio NativeHierarchyWrapper" Type="string" />
-                  <Registry Id="registry1" Root="HKCR" 
-                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\InprocServer32" 
-                            Value="[PRODDIR_2005]Lua\NativeHierarchyWrapper.dll" Type="string" />
-                  <Registry Id="registry2" Root="HKCR" 
-                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\InprocServer32" 
-                            Name="ThreadingModel" Value="Apartment" Type="string" />
-                  <Registry Id="registry3" Root="HKCR" 
-                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\ProgID" 
-                            Value="VisualStudio.NativeHierarchyWrapper.8.0" Type="string" />
-                  <Registry Id="registry4" Root="HKCR" 
-                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\TypeLib" 
-                            Value="{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}" Type="string" />
-                  <Registry Id="registry5" Root="HKCR" 
-                            Key="CLSID\{A0E8320F-40D7-45d8-B94F-CA4C13141B56}\VersionIndependentProgID" 
-                            Value="VisualStudio.NativeHierarchyWrapper" Type="string" />
-                  <Registry Id="registry6" Root="HKCR" 
-                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0" 
-                            Value="VisualStudio NativeHierarchyWrapper Type Library" Type="string" />
-                  <Registry Id="registry7" Root="HKCR" 
-                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\0\win32" 
-                            Value="[PRODDIR_2005]Lua\NativeHierarchyWrapper.dll" Type="string" />
-                  <Registry Id="registry8" Root="HKCR" 
-                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\FLAGS" 
-                            Value="0" Type="string" />
-                  <Registry Id="registry9" Root="HKCR" 
-                            Key="TypeLib\{9AA6D9FE-55CC-4a02-B6EF-0448C48B939D}\8.0\HELPDIR" 
-                            Value="[PRODDIR_2005]Lua" Type="string" />
-               
+                    src='./Resources/logo.ico' />            
+
                   <Registry Id='LuaReg1' Root='HKCR' Key='.lua' Action='write'
                      Type='string' Value='VisualStudio.lua.8.0' />
                   <Registry Id='LuaReg2' Root='HKCR' Key='VisualStudio.lua.8.0' Action='write'
