@@ -1,0 +1,30 @@
+Building
+---------------------
+-Install Visual Studio 8 SDK from MS. This version of the source requires the Apr. 2006 RTM version.
+
+-Substitute the location of your SDK installation, including version dir, to your p: drive. 
+	Example, >subst p: "D:\Program Files\Visual Studio 2005 SDK\2006.04"
+
+-Open LuaLangPack.sln and rebuild all
+
+**** Note, the MS load key is removed from this source distribution. Therefore, the binaries generated will
+ only work on machines with the VS SDK. If you want to distribute a derivitive work that loads without the
+ SDK, then you must obtain your own load key from the MS VSIP program. ****
+
+
+Installing
+---------------------
+-Install the "Wix" binaries. These can be found on Sourceforge. 
+
+-Run deploy.bat contained in the LuaLangPack project directory. This will invoke Wix to build
+ the LuaLangPack.msi and output "ProdDir" and "EnvDir". It will also copy the ProjectAggregator.msi
+ form the SDK into the current dir. 
+
+-The parts that need to be deployed are both msi files, EnvDir, ProdDir, and install.bat. Install.bat
+ simply runs both msi files. These can all be placed in a self extracting archive or whatever is convinient. 
+ Be sure to include the ProjectAggregator.msi, Lua project loading won't work without it. 
+
+ 
+  
+
+  
