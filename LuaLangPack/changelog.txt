@@ -1,9 +1,24 @@
-Version 0.3
+Version 0.5
 ---------------------------------------
--First public release.
+-2nd public release.
+-Integrated Lua parser.
+-Implemented auto code outlining on Lua functions.
+-Removed references to old HierarchyWrapper (previous SDK versions) in wix installer.
+-Added ProjectAggregator2 msi to install package (required for machines without VS SDK).
 
 
 Version 0.4
 ---------------------------------------
--Fixed 'escaped quote within string' syntax highlighting / lexer bug
--Added Lua 5.1 tokens
+-Development release.
+-Fixed 'escaped quote within string' syntax highlighting / lexer bug.
+-Added Lua 5.1 tokens.
+
+
+Version 0.3
+---------------------------------------
+-First public release. Syntax highlighting and Lua project support.
+
+
+
+
+

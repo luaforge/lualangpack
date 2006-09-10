@@ -21,6 +21,10 @@
     <StartAction>Program</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>/rootsuffix Exp /noVSIP</StartArguments>
+    <StartArguments>/rootsuffix Exp</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <StartArguments>/noVSIP</StartArguments>
+    <StartProgram>D:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
   </PropertyGroup>
 </Project>
