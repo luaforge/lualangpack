@@ -1,0 +1,2 @@
+ProjectAggregator2.msi
+LuaLangPack.msi
