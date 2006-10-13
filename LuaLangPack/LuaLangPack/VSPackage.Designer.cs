@@ -88,7 +88,7 @@ internal class VSPackage {
     }
     
     /// <summary>
-    ///   Looks up a localized string similar to NotAvailableInSourceDistro.
+    ///   Looks up a localized string similar to Not available in source distro.
     /// </summary>
     internal static string _110 {
         get {

@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>
 
-   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.5'>
+   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.5a'>
 
       <Package Id='14DADF49-CFF6-436c-B3E9-E3320DF3B0A6'/>
       <Media Id='1' Cabinet='product.cab' EmbedCab='yes' />
@@ -74,7 +74,7 @@
                         <Registry Name="CodeBase" Value="[PRODDIR_2005]Lua\LuaLangPack.dll" Type="string" />
                         <Registry Name="ID" Value="110" Type="integer" />
                         <Registry Name="MinEdition" Value="Standard" Type="string" />
-                        <Registry Name="ProductVersion" Value="0.3" Type="string" />
+                        <Registry Name="ProductVersion" Value="0.5a" Type="string" />
                         <Registry Name="ProductName" Value="Lua Language Integration Pack" Type="string" />
                         <Registry Name="CompanyName" Value="Real Networks Inc." Type="string" />
                      </Registry>
@@ -173,17 +173,22 @@
                     Name='Tools.dll' 
                     src='./Release/Tools.dll' />
                   
-                  <File Id='LuaLangIcon' 
-                    LongName='logo.ico' 
-                    Name='logo.ico' 
-                    src='./Resources/logo.ico' />            
+                  <File Id='LuaPrjIcon' 
+                    LongName='Lua Project.ico' 
+                    Name='Lua~1.ico' 
+                    src='./Resources/Lua Project.ico' /> 
+
+                  <File Id='LuaIcon' 
+                    LongName='Lua File.ico' 
+                    Name='Lua~2.ico' 
+                    src='./Resources/Lua File.ico' />            
 
                   <Registry Id='LuaReg1' Root='HKCR' Key='.lua' Action='write'
                      Type='string' Value='VisualStudio.lua.8.0' />
                   <Registry Id='LuaReg2' Root='HKCR' Key='VisualStudio.lua.8.0' Action='write'
                      Type='string' Value='Lua Language Source File' />
                   <Registry Id='LuaReg3' Root='HKCR' Key='VisualStudio.lua.8.0\DefaultIcon' Action='write'
-                     Type='string' Value='[PRODDIR_2005]lua\logo.ico,0' />
+                     Type='string' Value='[PRODDIR_2005]lua\Lua File.ico,0' />
                   <Registry Id='LuaReg4' Root='HKCR' Key='VisualStudio.lua.8.0\Shell\Open\Command' Action='write' 
                      Type='string' Value='"[ENVPATH_2005]" "%1"'/>
                   <Registry Id='LuaReg5' Root='HKCR' Key='.luaproj' Action='write'
@@ -191,7 +196,7 @@
                   <Registry Id='LuaReg6' Root='HKCR' Key='VisualStudio.luaproj.8.0' Action='write'
                      Type='string' Value='Lua Language Project File' />
                   <Registry Id='LuaReg7' Root='HKCR' Key='VisualStudio.luaproj.8.0\DefaultIcon' Action='write'
-                     Type='string' Value='[PRODDIR_2005]lua\logo.ico,0' />
+                     Type='string' Value='[PRODDIR_2005]lua\Lua Project.ico,0' />
                   <Registry Id='LuaReg8' Root='HKCR' Key='VisualStudio.luaproj.8.0\Shell\Open\Command' Action='write' 
                      Type='string' Value='"[ENVPATH_2005]" "%1"'/>
                </Component>

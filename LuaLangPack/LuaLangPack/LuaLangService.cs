@@ -82,7 +82,7 @@ namespace Vsip.LuaLangPack
          langPref.EnableCodeSense = true;
          langPref.EnableAsyncCompletion = true;
          langPref.AutoOutlining = true;
-         langPref.MaxRegionTime = 1000000;
+         langPref.MaxRegionTime = 10000;
          return langPref;
       }
 

@@ -1,16 +1,44 @@
+Version 0.5a (bugfix release)
+---------------------------------------
+-Fixed several parser errors that sometimes prevented a full parse. In such cases, 
+ auto-outlining would fail. Whether or not you actually hit these errors depended
+ greatly on personal coding style.
+
+-Fixed error that caused anonymous functions declared as arguments to function calls 
+ from being auto-outlined. 
+
+-All shift-reduce conflicts resolved...although it remains to be seen if they've
+ been resolved correctly.
+
+-Fixed syntax highlighting of and, or, not operators.
+
+-Fixed syntax highlighting of single quote strings.
+
+-Added new project file and Lua source file icons donated by Ioannis Kappas.
+
+-Added explicit uninstall of previous version to install bat. Overinstall
+ didn't work so a manual uninstall was required before on v0.3. 
+
+
 Version 0.5
 ---------------------------------------
 -2nd public release.
+
 -Integrated Lua parser.
+
 -Implemented auto code outlining on Lua functions.
+
 -Removed references to old HierarchyWrapper (previous SDK versions) in wix installer.
+
 -Added ProjectAggregator2 msi to install package (required for machines without VS SDK).
 
 
 Version 0.4
 ---------------------------------------
 -Development release.
+
 -Fixed 'escaped quote within string' syntax highlighting / lexer bug.
+
 -Added Lua 5.1 tokens.
 
 

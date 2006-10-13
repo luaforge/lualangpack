@@ -17,25 +17,29 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 DEALINGS IN THE SOFTWARE.
 
 
-	**The Compiler tools redistributed with this project which include the files,
+** The Compiler tools redistributed with this project which include the files,
 
 	-tools.dll
 	-pg.exe
 	-lg.exe
 
-	fall under the following license.
+fall under the following license.
 
-	This distribution contains software written by 
-	Malcolm Crowe at the University of Paisley.
-	(malcolm.crowe@paisley.ac.uk)
-	The tools and component(s) may be freely used as is, 
-	copied and redistributed.
+This distribution contains software written by 
+Malcolm Crowe at the University of Paisley.
+(malcolm.crowe@paisley.ac.uk)
+The tools and component(s) may be freely used as is, 
+copied and redistributed.
 
-	The source files may also be freely used, copied or redistributed,
-	provided this notice or an equivalent statement is distributed with it.
-	The source code may be modified and/or included in other
-	software or products, but in that case, due reference
-	should be made to Malcolm Crowe at the University of Paisley
-	in any list of authors of the software or product. **
+The source files may also be freely used, copied or redistributed,
+provided this notice or an equivalent statement is distributed with it.
+The source code may be modified and/or included in other
+software or products, but in that case, due reference
+should be made to Malcolm Crowe at the University of Paisley
+in any list of authors of the software or product. **
+
+
+** The Lua file (Lua File.ico) and and project icon (Lua Project.ico) were contributed
+by Ioannis Kappas. ** 
 
 	

@@ -1,4 +1,6 @@
 %parser lua.lexer
+%left MULT PLUS MINUS MOD DIVIDE CONCAT END FUNCTION COMMA NAME NEQ LT GT LE AND GE EQ OR
+%right EXP ASSIGN LPAREN
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// ABSTRACT SYNTAX /////////////////////////////////
@@ -29,8 +31,10 @@
 %symbol block {
 	chunk c;
 	public block( chunk a ){ c = a; }
+	public block(){}
 	public void FillScope( LuaScope scope ){
-	   c.FillScope( scope );
+	   if( c != null )
+	    c.FillScope( scope );
 	}
 }
 
@@ -78,6 +82,8 @@
 	public parlist( NAME a ){ name = a; }
 	public parlist( NAME a, parlist b ){ name = a; p = b; }
 	public void FillScope( LuaScope s ) {
+	    if( p != null )
+	        p.FillScope( s );
 	}
 }
 
@@ -152,7 +158,7 @@
       e.FillScope( s );
    }
    public virtual void FillScope( LuaScope s, var v ){
-      v.FieldAssign( s, e.Eval() );
+      // v.FieldAssign( s, e.Eval() ); // unstable
    }
 }
 %node FieldExpAssign : field {
@@ -175,7 +181,7 @@
       e.FillScope( s );
    }
    public override void FillScope( LuaScope s, var v ){
-      v.FieldAssign( s, n.s );        
+      // v.FieldAssign( s, n.s ); // unstable        
    }
 }
 
@@ -213,7 +219,7 @@
       }
    }
    public virtual void FillScope( LuaScope s, var v ){
-      v.CreateTable( s ); 
+//      v.CreateTable( s );  // Comented for now, causing crashes
       if( f != null ){
          f.FillScope( s, v );
       }
@@ -222,11 +228,15 @@
 
 
 ////////////////////////////// FUNCTION ///////////////////////////////////////
+// Need to make new scope here to cover cases where annon functions are created
+// as part of an explist. 
 %symbol function {
    private funcbody f;
    public function( funcbody a ){ f = a; } 
    public virtual void FillScope( LuaScope s ){
-      f.FillScope( s );
+      LuaScope nested = new LuaScope( s );
+	  f.FillScope( nested );
+	  s.nested.AddLast( nested );
    }
    public virtual void FillScope( LuaScope s, var v ) {
       f.FillScope( s );   
@@ -485,6 +495,89 @@
 	   body.FillScope( scope );
 	}
 }
+%node FunctionCall : stat
+{
+    prefixexp p;
+    public FunctionCall( prefixexp a ){ p = a; }
+    public override void FillScope( LuaScope scope ){	   
+	   p.FillScope( scope );
+	}  
+}
+%node SIf : stat
+{
+    exp e;
+    block b;
+    public SIf( exp a , block i ){ e = a; b = i; }
+    public override void FillScope( LuaScope s ){
+        e.FillScope( s );
+        b.FillScope( s );
+    }
+}
+%node SElseIf : stat
+{
+    exp e;
+    block b;
+    elseif eli;
+    public SElseIf( exp a , block i, elseif j ){ e = a; b = i; eli = j; }
+    public override void FillScope( LuaScope s ){
+        e.FillScope( s );
+        b.FillScope( s );
+        eli.FillScope( s );
+    }
+}
+%node SElse : stat
+{
+    exp e;
+    block b1;
+    block b2;
+    public SElse( exp a , block i, block j ){ e = a; b1 = i; b2 = j; }
+    public override void FillScope( LuaScope s ){
+        e.FillScope( s );
+        b1.FillScope( s );
+        b2.FillScope( s );
+    }
+}
+
+///////////////////////////// ELSEIF ////////////////////////////////////////
+%symbol elseif {
+	public elseif(){}
+	public virtual void FillScope( LuaScope scope ){} 
+}
+%node If : elseif
+{
+    exp e;
+    block b;
+    public If( exp a , block i ){ e = a; b = i; }
+    public override void FillScope( LuaScope s ){
+        e.FillScope( s );
+        b.FillScope( s );
+    }
+}
+%node ElseIf : elseif
+{
+    exp e;
+    block b;
+    elseif eli;
+    public ElseIf( exp a , block i, elseif j ){ e = a; b = i; eli = j; }
+    public override void FillScope( LuaScope s ){
+        e.FillScope( s );
+        b.FillScope( s );
+        eli.FillScope( s );
+    }
+}
+%node Else : elseif
+{
+    exp e;
+    block b1;
+    block b2;
+    public Else( exp a , block i, block j ){ e = a; b1 = i; b2 = j; }
+    public override void FillScope( LuaScope s ){
+        e.FillScope( s );
+        b1.FillScope( s );
+        b2.FillScope( s );
+    }
+}
+
 
 
 ////////////////////////////// ARGUMENT ///////////////////////////////////////
@@ -492,7 +585,7 @@
    private explist e;
    private tableconstructor t;
    public arg( tableconstructor a ){ t = a; }
-   public arg( explist a ){ a = e; }
+   public arg( explist a ){ e = a; }
    public virtual void FillScope( LuaScope s ){
       if( e != null ){
          e.FillScope( s );
@@ -515,17 +608,18 @@ chunk			: stat:a												   %chunk( a )
 				| stat:a chunk:b										   %chunk( a, b )
 				| stat:a SEMICOLON chunk:b								   %chunk( a, b );
 				
-block			: chunk:a												   %block( a );
+block			: chunk:a												   %block( a )
+                |                                                          %block();
 
 stat			: varlist:a ASSIGN explist:b							   %Assignment( a, b )													     									
-				| prefixexp                                                %stat()	
+				| prefixexp:a                                              %FunctionCall( a )	
 				| DO block END											   %stat()
 				| WHILE exp DO block END								   %stat()
 				| WHILE exp DO END								           %stat()
 				| REPEAT block UNTIL exp								   %stat()
-				| IF exp THEN block END									   %stat()
-				| IF exp THEN block ELSEIF elseif END					   %stat()
-				| IF exp THEN block ELSE block END						   %stat()
+				| IF exp:a THEN block:b END								   %SIf( a, b )
+				| IF exp:a THEN block:b ELSEIF elseif:c END				   %SElseIf( a, b, c )
+				| IF exp:a THEN block:b ELSE block:c END				   %SElse( a, b, c )
 				| RETURN												   %stat()
 				| RETURN explist:a										   %Retval( a )
 				| BREAK													   %stat()
@@ -537,12 +631,13 @@ stat			: varlist:a ASSIGN explist:b							   %Assignment( a, b )
 				| LOCAL namelist										   %stat()
 				| LOCAL namelist:a init:b								   %LocalInit( a, b );
 				
-elseif		    : exp THEN block ELSEIF elseif
-                | exp THEN block ELSE block
-				| exp THEN block; 
+elseif		    : exp:a THEN block:b ELSEIF elseif:c                       %ElseIf( a, b, c )                             
+                | exp:a THEN block:b ELSE block:c                          %Else( a, b, c )
+				| exp:a THEN block:b                                       %If( a, b ); 
 
 fieldlist 	    : field:a                                                  %fieldlist( a )
-				| field:a fieldsep fieldlist:b                             %fieldlist( a, b );
+				| field:a fieldsep fieldlist:b                             %fieldlist( a, b )
+				| field:a fieldsep                                         %fieldlist( a );
 
 tableconstructor : LBRACE RBRACE                                           %tableconstructor()
 				 | LBRACE fieldlist:a RBRACE                               %tableconstructor( a );                        
@@ -623,7 +718,7 @@ binop		: PLUS
 fieldsep	: COMMA 
             | SEMICOLON;
 
-field		: RBRACK exp:a LBRACK ASSIGN exp:b                            %FieldExpAssign( a, b )
+field		: LBRACK exp:a RBRACK ASSIGN exp:b                            %FieldExpAssign( a, b )
 			| NAME:a ASSIGN exp:b                                         %FieldAssign( a, b )
 			| exp:a                                                       %field( a );
 				
