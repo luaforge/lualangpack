@@ -14,6 +14,14 @@ namespace Vsip.LuaLangPack
         private Hashtable tokenInf = new Hashtable();
         private Lexer lexer = new tokens();
         private string srcBuf;
+        private int nestBlock = 0;
+        private int yypos = 0;
+        private bool synch = false;
+        private enum ParseState
+        {
+            InText = 0,
+            InComment = 1
+        }
 
         public LuaScanner()
         {
@@ -86,11 +94,71 @@ namespace Vsip.LuaLangPack
         public bool ScanTokenAndProvideInfoAboutIt(TokenInfo tokenInfo, ref int state)
         {
             // Handle comments as a special case. We don't tokenize them in the lexer
-            // since we don't want to send them to the parser.
-            int yypos = lexer.yypos;
-         
-            TOKEN tok = lexer.Next();
-            if (tok != null)
+            // since we don't want to send them to the parser.  
+            TOKEN tok = null;
+            if (state != (int)ParseState.InComment)
+            {
+                if (synch) // handles picking up after end of block comment
+                {
+                    synch = false;
+                    while (lexer.yypos < yypos)
+                        lexer.Advance();
+                }
+
+                yypos = lexer.yypos;
+                tok = lexer.Next();
+            }
+            
+            if (state == (int)ParseState.InComment)
+            {
+                if (yypos >= srcBuf.Length)
+                {
+                    yypos = 0;
+                    return false;
+                }
+
+                TokenInfo inf = (TokenInfo)tokenInf["COMMENT"];
+                tokenInfo.Color = inf.Color;
+                tokenInfo.Type = inf.Type;
+                tokenInfo.Trigger = inf.Trigger;
+                tokenInfo.StartIndex = yypos;
+
+                // Handle nested comment blocks
+                int len = srcBuf.Length;
+                char[] cs = new char[len];
+                cs = srcBuf.ToCharArray();
+                int i = yypos;
+                for (; (i+1) < len; ++i)
+                {
+                    if (cs[i] == '[' && cs[i + 1] == '[')
+                    {
+                        ++i; ++nestBlock;
+                    }
+                    else if (cs[i] == ']' && cs[i + 1] == ']')
+                    {
+                        ++i; --nestBlock;
+                    }
+
+                    if (nestBlock < 0)
+                        break;
+                }
+
+                if (nestBlock < 0)
+                {
+                    tokenInfo.EndIndex = i;
+                    state = (int)ParseState.InText;
+                    nestBlock = 0;
+                }
+                else
+                    tokenInfo.EndIndex = srcBuf.Length;
+
+                // We always scan the whole line in this case so safe to always
+                // return false indecating there are no more tokens on this line.
+                yypos = tokenInfo.EndIndex;
+                synch = true;
+                return true;
+            }
+            else if (tok != null)
             {
                 if (tokenInf.Contains(tok.yyname))
                 {
@@ -109,6 +177,17 @@ namespace Vsip.LuaLangPack
                 tokenInfo.StartIndex = tok.Position;
                 tokenInfo.EndIndex = lexer.yypos - 1;
             }
+            else if (yypos < srcBuf.Length && srcBuf.Contains("--[["))
+            {
+                tokenInfo.StartIndex = srcBuf.IndexOf("--[[", yypos);
+                yypos += 5;
+                tokenInfo.EndIndex = yypos + 4;
+                TokenInfo inf = (TokenInfo)tokenInf["COMMENT"];
+                tokenInfo.Color = inf.Color;
+                tokenInfo.Type = inf.Type;
+                tokenInfo.Trigger = inf.Trigger;
+                state = (int)ParseState.InComment; 
+            }
             else if (yypos < srcBuf.Length && srcBuf.Contains("--"))
             {
                 tokenInfo.StartIndex = srcBuf.IndexOf("--", yypos);
@@ -119,18 +198,22 @@ namespace Vsip.LuaLangPack
                 tokenInfo.Trigger = inf.Trigger;
             }
             else
+            {
+                yypos = 0;
                 return false;
-         
+            }
+
             return true;
         }
 
         public void SetSource(string source, int offset)
         {
             srcBuf = source;
-
             lexer.Start(source);
             while (lexer.yypos < offset)
                 lexer.Advance();
         }
+
+
     }
 }

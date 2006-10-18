@@ -42,11 +42,11 @@ namespace Vsip.LuaLangPack
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [DefaultRegistryRoot("Software\\Microsoft\\VisualStudio\\8.0")]
     [InstalledProductRegistration(true, "Lua Language Integration Pack", "Provides Lua 5.0 language integration with Visual Studio", "0.3", IconResourceID = 400)]
-    [ProvideLoadKey("Standard", "0.3", "Lua Language Integration Pack", "trystan.org", 110)]
+    [ProvideLoadKey("Standard", "0.3", "Lua Language Integration Pack", "Real Networks Inc.", 110)]
     [ProvideProjectFactory(typeof(LuaProjectFactory), "Lua Project", "LuaProject Project Files (*.luaproj);*.luaproj", "luaproj", "luaproj", "..\\Templates\\Projects")]
     [ProvideProjectItem(typeof(LuaProjectFactory), "Lua Items", "..\\Templates\\ProjectItems", 500)]
     [ProvideServiceAttribute(typeof(LuaLangService), ServiceName = "VS 2005 Lua Language Service")]
-    [ProvideLanguageServiceAttribute(typeof(LuaLangService), "VS 2005 Lua Language Service", 103, CodeSense = true, AutoOutlining = true, EnableAsyncCompletion = true)]
+    [ProvideLanguageServiceAttribute(typeof(LuaLangService), "VS 2005 Lua Language Service", 103, CodeSense = true, AutoOutlining = true, EnableAsyncCompletion = true, EnableCommenting = true)]
     [ProvideLanguageExtensionAttribute(typeof(LuaLangService),".lua")]
     [ProvideObject(typeof(LuaPropertyPage))]
 
@@ -235,35 +235,54 @@ namespace Vsip.LuaLangPack
     [Guid("B416BD01-3431-4262-87D4-977196E5E832")]
     public class LuaPrj : Microsoft.VisualStudio.Package.ProjectNode
     {
-       private LuaLangPack package;
+        private LuaLangPack package;
 
-       public LuaPrj(LuaLangPack pkg)
-       {
-          Trace.WriteLine("LuaLangPack: Project Node Construction");
-          this.package = pkg;
-       }
-       public override Guid ProjectGuid
-       {
-          get
-          {
-             return typeof(LuaProjectFactory).GUID;
-          }
-       }
-       public override string ProjectType
-       {
-          get
-          {
-             return "LuaPrj";
-          }
-       }
+        public LuaPrj(LuaLangPack pkg)
+        {
+            Trace.WriteLine("LuaLangPack: Project Node Construction");
+            this.package = pkg;
+        }
+       
+        public override Guid ProjectGuid
+        {
+            get
+            {
+                return typeof(LuaProjectFactory).GUID;
+            }
+        }
+       
+        public override string ProjectType
+        {
+            get
+            {
+                return "LuaPrj";
+            }
+        }
 
-       public override Guid[] GetPropertyPageGuids()
-       {
-          Trace.WriteLine("LuaLangPack: Prop Page Guids");
-          Guid[] result = new Guid[1];
-          result[0] = typeof(LuaPropertyPage).GUID;
-          return result;
-       }
+        public override object GetIconHandle(bool open)
+        {
+            return typeof(ProjectNode).Assembly.GetManifestResourceStream("Resources.Lua Project.ico");   
+        }
+
+        public override object GetProperty(int propId)
+        {
+            if ((__VSHPROPID)propId == __VSHPROPID.VSHPROPID_IconIndex)
+            {
+                return -1;
+            }
+            else if ((__VSHPROPID)propId == __VSHPROPID.VSHPROPID_IconHandle)
+                return GetIconHandle(false);
+            else
+                return base.GetProperty(propId);
+        }
+
+        public override Guid[] GetPropertyPageGuids()
+        {
+            Trace.WriteLine("LuaLangPack: Prop Page Guids");
+            Guid[] result = new Guid[1];
+            result[0] = typeof(LuaPropertyPage).GUID;
+            return result;
+        }
 
        /// <summary>
        /// Returns the configuration dependent property pages.
