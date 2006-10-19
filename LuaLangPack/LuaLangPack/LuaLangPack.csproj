@@ -139,9 +139,6 @@
     <None Include="lua.parser" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\logo.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Resources\Lua Project.ico" />
   </ItemGroup>
   <PropertyGroup>

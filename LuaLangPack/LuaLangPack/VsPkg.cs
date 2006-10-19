@@ -259,21 +259,14 @@ namespace Vsip.LuaLangPack
             }
         }
 
+        public override int ImageIndex
+        {
+            get { return NoImage; }
+        }
+
         public override object GetIconHandle(bool open)
         {
             return typeof(ProjectNode).Assembly.GetManifestResourceStream("Resources.Lua Project.ico");   
-        }
-
-        public override object GetProperty(int propId)
-        {
-            if ((__VSHPROPID)propId == __VSHPROPID.VSHPROPID_IconIndex)
-            {
-                return -1;
-            }
-            else if ((__VSHPROPID)propId == __VSHPROPID.VSHPROPID_IconHandle)
-                return GetIconHandle(false);
-            else
-                return base.GetProperty(propId);
         }
 
         public override Guid[] GetPropertyPageGuids()
