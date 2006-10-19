@@ -74,7 +74,7 @@
                         <Registry Name="CodeBase" Value="[PRODDIR_2005]Lua\LuaLangPack.dll" Type="string" />
                         <Registry Name="ID" Value="110" Type="integer" />
                         <Registry Name="MinEdition" Value="Standard" Type="string" />
-                        <Registry Name="ProductVersion" Value="0.5a" Type="string" />
+                        <Registry Name="ProductVersion" Value="0.3" Type="string" />
                         <Registry Name="ProductName" Value="Lua Language Integration Pack" Type="string" />
                         <Registry Name="CompanyName" Value="Real Networks Inc." Type="string" />
                      </Registry>

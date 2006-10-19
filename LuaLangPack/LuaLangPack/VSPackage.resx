@@ -127,7 +127,7 @@
     <value>Lua</value>
   </data>
   <data name="110" xml:space="preserve">
-    <value>MACAH0MRQIITKDI9KCHARAP2JIRZM9IEECK3KTQ8K3Q3MPDIQRR2PZQADDRJMDH3K2ZAKMPTAJK8D2DDHMAAQ3J3Q2K3DADAAPAIR0EJRIZIE9JEM3J0KTMKQRHPHZPZ</value>
+    <value>Not available in source distro</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="400" type="System.Resources.ResXFileRef, System.Windows.Forms">

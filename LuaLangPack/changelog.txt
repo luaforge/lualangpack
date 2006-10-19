@@ -1,5 +1,7 @@
 Version 0.5a (bugfix release)
 ---------------------------------------
+-Added support for lexing/colorizing of block comments.
+
 -Fixed several parser errors that sometimes prevented a full parse. In such cases, 
  auto-outlining would fail. Whether or not you actually hit these errors depended
  greatly on personal coding style.
