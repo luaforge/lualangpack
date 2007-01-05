@@ -17,6 +17,7 @@ namespace Vsip.LuaLangPack
         private int nestBlock = 0;
         private int yypos = 0;
         private bool synch = false;
+        private TOKEN m_lastTok = null;
         private enum ParseState
         {
             InText = 0,
@@ -82,6 +83,12 @@ namespace Vsip.LuaLangPack
             tokenInf.Add("ASSIGN", inf);
             tokenInf.Add("MULT", inf);
             tokenInf.Add("CONCAT", inf);
+            tokenInf.Add("LPAREN", inf);
+            tokenInf.Add("RPAREN", inf);
+            tokenInf.Add("LBRACK", inf);
+            tokenInf.Add("RBRACK", inf);
+            tokenInf.Add("LBRACE", inf);
+            tokenInf.Add("RBRACE", inf);
 
             inf = new TokenInfo();
             inf.Color = TokenColor.Text;
@@ -104,7 +111,7 @@ namespace Vsip.LuaLangPack
                     while (lexer.yypos < yypos)
                         lexer.Advance();
                 }
-
+                
                 yypos = lexer.yypos;
                 tok = lexer.Next();
             }
@@ -172,10 +179,22 @@ namespace Vsip.LuaLangPack
                     tokenInfo.Color = TokenColor.Text;
                     tokenInfo.Type = TokenType.Unknown;
                     tokenInfo.Trigger = TokenTriggers.None;
+
+                    if (tok.yytext.Length == 1)
+                    {
+                        if (tokenInf.Contains(m_lastTok.yyname))
+                        {
+                            if (((TokenInfo)tokenInf[m_lastTok.yyname]).Trigger != TokenTriggers.MemberSelect)
+                                tokenInfo.Trigger = TokenTriggers.MemberSelect;
+                        }
+                        else
+                            tokenInfo.Trigger = TokenTriggers.MemberSelect;
+                    }
                 }
 
                 tokenInfo.StartIndex = tok.Position;
                 tokenInfo.EndIndex = lexer.yypos - 1;
+                m_lastTok = tok;
             }
             else if (yypos < srcBuf.Length && srcBuf.Contains("--[["))
             {
@@ -213,7 +232,5 @@ namespace Vsip.LuaLangPack
             while (lexer.yypos < offset)
                 lexer.Advance();
         }
-
-
     }
 }

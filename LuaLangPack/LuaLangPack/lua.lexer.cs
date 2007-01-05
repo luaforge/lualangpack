@@ -1,20 +1,19 @@
 using System;using Tools;
-//%+LITERAL+3
-public class LITERAL : TOKEN{
- public  string  s ;
- public  LITERAL (Lexer yyl, string  a ):base(((tokens)yyl)){ s = a ;
-}
-
-public override string yyname { get { return "LITERAL"; }}
-public override int yynum { get { return 3; }}
-public LITERAL(Lexer yyl):base(yyl){}}
-//%+NAME+4
+//%+NAME+3
 public class NAME : TOKEN{
  public  string  s ;
 
 public override string yyname { get { return "NAME"; }}
-public override int yynum { get { return 4; }}
+public override int yynum { get { return 3; }}
 public NAME(Lexer yyl):base(yyl){}}
+//%+LITERAL+4
+public class LITERAL : NAME{
+ public  LITERAL (Lexer yyl, string  a ):base(((tokens)yyl)){ s = a ;
+}
+
+public override string yyname { get { return "LITERAL"; }}
+public override int yynum { get { return 4; }}
+public LITERAL(Lexer yyl):base(yyl){}}
 //%+NUMBER+5
 public class NUMBER : TOKEN{
  public  double  n ;
@@ -5334,7 +5333,7 @@ public class yytokens : YyLexer {
 53,651,4,8,78,
 0,65,0,77,0,
 69,0,652,10,651,
-1,4,283,653,10,
+1,3,283,653,10,
 283,1,13,383,654,
 10,383,1,30,443,
 655,10,443,1,10,
@@ -5343,7 +5342,7 @@ public class yytokens : YyLexer {
 0,73,0,84,0,
 69,0,82,0,65,
 0,76,0,658,10,
-657,1,3,558,659,
+657,1,4,558,659,
 10,558,1,29,491,
 660,10,491,1,39,
 552,661,10,552,1,

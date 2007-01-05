@@ -22,9 +22,10 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <StartArguments>/rootsuffix Exp</StartArguments>
+    <StartProgram>E:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <StartArguments>/noVSIP</StartArguments>
-    <StartProgram>D:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
+    <StartProgram>E:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.exe</StartProgram>
   </PropertyGroup>
 </Project>

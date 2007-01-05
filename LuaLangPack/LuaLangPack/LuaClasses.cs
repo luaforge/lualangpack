@@ -12,6 +12,35 @@ using Tools;
 
 public class LuaNamespace
 {
+    public LuaNamespace() { }
+    public LuaNamespace(LuaNamespace ns)
+    {
+        foreach (LinkedList<LuaName> names in ns.m_names.Values)
+        {
+            foreach (LuaName name in names)
+            {
+                LuaName n = new LuaName(name);
+                Add(n);
+            }
+        }
+        foreach (LinkedList<LuaTable> tables in ns.m_tables.Values)
+        {
+            foreach (LuaTable table in tables)
+            {
+                LuaTable t = new LuaTable(table);
+                Add(t);
+            }
+        }
+        foreach (LinkedList<LuaFunction> funs in ns.m_functions.Values)
+        {
+            foreach (LuaFunction fun in funs)
+            {
+                LuaFunction f = new LuaFunction(fun);
+                Add(f);
+            }
+        }
+    }
+
     public void Add(LuaName n)
     {
         if (!m_names.ContainsKey(n.name))
@@ -41,10 +70,11 @@ public class LuaNamespace
         if (m_tables.ContainsKey(name))
         {
             foreach (LuaTable t in m_tables[name])
-                if (t.line <= line && t.pos < pos && t.line >= retVal.line && t.pos > retVal.pos)
+                if ((t.line < line || (t.line == line && t.pos < pos)) &&
+                    (t.line > retVal.line || (t.line == retVal.line && t.pos > retVal.pos)))
                     retVal = t;
 
-            if (retVal.line != 0)
+            if (retVal.line != -1)
                 return retVal;
         }
 
@@ -57,10 +87,11 @@ public class LuaNamespace
         if (m_names.ContainsKey(name))
         {
             foreach (LuaName n in m_names[name])
-                if (n.line <= line && n.pos < pos && n.line >= retVal.line && n.pos > retVal.pos)
+                if ((n.line < line || (n.line == line && n.pos < pos)) &&
+                    (n.line > retVal.line || (n.line == retVal.line && n.pos > retVal.pos)))
                     retVal = n;
 
-            if (retVal.line != 0)
+            if (retVal.line != -1)
                 return retVal;
         }
 
@@ -73,16 +104,17 @@ public class LuaNamespace
         if (m_functions.ContainsKey(name))
         {
             foreach (LuaFunction f in m_functions[name])
-                if (f.line <= line && f.pos < pos && f.line >= retVal.line && f.pos > retVal.pos)
+                if ((f.line < line || (f.line == line && f.pos < pos)) &&
+                    (f.line > retVal.line || (f.line == retVal.line && f.pos > retVal.pos)))
                     retVal = f;
 
-            if (retVal.line != 0)
+            if (retVal.line != -1)
                 return retVal;
         }
 
         return null;
     }
-    public LuaName Lookup(string name, int line, int pos)
+    public virtual ILuaName Lookup(string name, int line, int pos)
     {
         ILuaName n1 = LookupTable(name, line, pos);
         ILuaName n2 = LookupName(name, line, pos);
@@ -100,14 +132,29 @@ public class LuaNamespace
         l.Add(n2);
         l.Add(n3);
 
-        LuaName obj = new LuaName();
+        ILuaName obj = new LuaName();
 
-        foreach (LuaName n in l)
+        foreach (ILuaName n in l)
             if (n.line >= obj.line && n.pos > obj.pos)
                 obj = n;
 
-        if (obj.line != 0)
+        if (obj.line != -1)
             return obj;
+        else
+            return null;
+    }
+
+    public LuaName ShallowLookupName(string name)
+    {
+        if (m_names.ContainsKey(name))
+            return m_names[name].First.Value;
+        else
+            return null;
+    }
+    public LuaFunction ShallowLookupFunction(string name)
+    {
+        if (m_functions.ContainsKey(name))
+            return m_functions[name].First.Value;
         else
             return null;
     }
@@ -121,10 +168,11 @@ public class LuaNamespace
             LuaTable tmp = new LuaTable();
 
             foreach (LuaTable t in table)
-                if (t.line <= line && t.pos < pos && t.line >= tmp.line && t.pos > tmp.pos)
+                if ((t.line < line || (t.line == line && t.pos < pos)) && 
+                    (t.line > tmp.line || (t.line == tmp.line && t.pos > tmp.pos)))
                     tmp = t;
 
-            if( tmp.line != 0 )
+            if( tmp.line != -1 )
                 ret.AddLast(tmp);
         }
 
@@ -139,10 +187,11 @@ public class LuaNamespace
             LuaName tmp = new LuaName();
 
             foreach (LuaName n in names)
-                if (n.line <= line && n.pos < pos && n.line >= tmp.line && n.pos > tmp.pos)
+                if ((n.line < line || (n.line == line && n.pos < pos)) &&
+                    (n.line > tmp.line || (n.line == tmp.line && n.pos > tmp.pos)))
                     tmp = n;
 
-            if (tmp.line != 0)
+            if (tmp.line != -1)
                 ret.AddLast(tmp);
         }
 
@@ -157,10 +206,11 @@ public class LuaNamespace
             LuaFunction tmp = new LuaFunction();
 
             foreach (LuaFunction f in functions)
-                if (f.line <= line && f.pos < pos && f.line >= tmp.line && f.pos > tmp.pos)
+                if ((f.line < line || (f.line == line && f.pos < pos)) &&
+                    (f.line > tmp.line || (f.line == tmp.line && f.pos > tmp.pos)))
                     tmp = f;
 
-            if (tmp.line != 0)
+            if (tmp.line != -1)
                 ret.AddLast(tmp);
         }
 
@@ -206,8 +256,16 @@ public class LuaNamespace
     private Dictionary<string, LinkedList<LuaFunction>> m_functions = new Dictionary<string, LinkedList<LuaFunction>>();
 }
 
+public enum LuaType {
+    Name,
+    Function,
+    Table,
+    RetValSet
+}
+
 public interface ILuaName
 {
+    #region Properties
     string name
     {
         get; set;
@@ -220,6 +278,11 @@ public interface ILuaName
     {
         get; set;
     }
+    LuaType type
+    {
+        get;
+    }
+    #endregion 
 }
 
 public class LuaName : ILuaName
@@ -240,10 +303,24 @@ public class LuaName : ILuaName
         get { return m_pos; }
         set { m_pos = value; }
     }
+    public LuaType type
+    {
+        get { return m_type; }
+    }
     #endregion
 
-    private int m_line = 0;
-    private int m_pos = 0;
+    public LuaName() { }
+    public LuaName(LuaName n)
+    {
+        m_line = n.m_line;
+        m_name = n.m_name;
+        m_pos = n.m_pos;
+        m_type = n.m_type;
+    }
+
+    private int m_line = -1;
+    private int m_pos = -1;
+    private LuaType m_type = LuaType.Name;
     private string m_name;
 }
 
@@ -265,11 +342,81 @@ public class LuaTable : LuaNamespace, ILuaName
         get { return m_pos; }
         set { m_pos = value; }
     }
+    public LuaType type
+    {
+        get { return m_type; }
+    }
     #endregion 
+
+    public LuaTable() { }
+    public LuaTable(LuaTable t) : base(t)
+    {
+        m_line = t.m_line;
+        m_name = t.m_name;
+        m_pos = t.m_pos;
+        m_type = t.m_type;
+    }
+
+    private int m_line = -1;
+    private int m_pos = -1;
+    private string m_name;
+    private LuaType m_type = LuaType.Table;
+}
+
+public class RetValSet : ILuaName
+{
+    #region LuaName Implementation
+    public string name
+    {
+        get { return m_name; }
+        set { m_name = value; }
+    }
+    public int line
+    {
+        get { return m_line; }
+        set { m_line = value; }
+    }
+    public int pos
+    {
+        get { return m_pos; }
+        set { m_pos = value; }
+    }
+    public LuaType type
+    {
+        get { return m_type; }
+    }
+    #endregion
+
+    public RetValSet(explist e)
+    {
+        m_retVals = e;
+    }
+    public void FillScope(LuaScope s, varlist vl)
+    {
+        m_retVals.FillScope(s, vl);
+    }
+    public void FillScope(LuaScope s, namelist nl)
+    {
+        m_retVals.FillScope(s, nl);
+    }
+    public void FillScope(LuaScope s, var v)
+    {
+        m_retVals.FillScope(s, v);
+    }
+    public void FillScope(LuaScope s, NAME n)
+    {
+        m_retVals.FillScope(s, n);
+    }
+    public ILuaName Resolve(LuaScope s)
+    {
+        return m_retVals.Resolve(s);
+    }
 
     private int m_line = 0;
     private int m_pos = 0;
     private string m_name;
+    private LuaType m_type = LuaType.RetValSet;
+    private explist m_retVals;
 }
 
 public class LuaFunction : ILuaName
@@ -290,13 +437,41 @@ public class LuaFunction : ILuaName
         get { return m_pos; }
         set { m_pos = value; }
     }
+    public LuaType type
+    {
+        get { return m_type; }
+    }
     #endregion
 
-    private int m_line = 0;
-    private int m_pos = 0;
-    private string m_name;
+    public LuaFunction() { }
+    public LuaFunction(LuaFunction f)
+    {
+        m_line = f.m_line;
+        m_name = f.m_name;
+        m_pos = f.m_pos;
+        m_type = f.m_type;
+    }
+    
+    public void Add( explist e )
+    {
+        m_retVals.AddLast(new RetValSet(e)); 
+    }
+    public void Add( string n )
+    { 
+        m_arguments.AddLast(n); 
+    }
 
-    public LinkedList<string> arguments = new LinkedList<string>();
+    public LinkedList<RetValSet> RetStats
+    {
+        get { return m_retVals; }
+    }
+
+    private int m_line = -1;
+    private int m_pos = -1;
+    private string m_name;
+    private LuaType m_type = LuaType.Function;
+    private LinkedList<string> m_arguments = new LinkedList<string>();
+    private LinkedList<RetValSet> m_retVals = new LinkedList<RetValSet>();
 }
 
 
@@ -332,22 +507,37 @@ public class LuaScope : LuaNamespace
         beginLine = -1; endLine = -1; beginIndx = -1; endIndx = -1;
     }
 
+    // There's never a case where we want to look only at the current scope since Lua
+    // is lexically scoped. We always want to look at all parent scopes as well until
+    // we find the name or run out of parents.
+    public override ILuaName Lookup(string name, int line, int pos)
+    {
+        ILuaName obj = base.Lookup(name, line, pos);
+        if (obj != null)
+            return obj;
+        else if (m_parent != null)
+            return m_parent.Lookup(name, line, pos);
+        else
+            return null;
+    }
+ 
     public LuaScope FindEnclosingScope(int line)
     {
+        LuaScope retVal = m_parent;
+
         if (line >= beginLine && line <= endLine) // We're in this scope, see if we're in a child scope
         {
-            if (nested.Count == 0)
+            retVal = this;
 
             foreach (LuaScope scope in nested)
             {
-                if (scope.FindEnclosingScope(line) != this)
-                    return scope;
+                retVal = scope.FindEnclosingScope(line);
+                if (retVal != this)
+                    break;
             }
-
-            return this;
         }
-        else
-            return m_parent;
+
+        return retVal;
     }
 
     public LuaScope GlobalScope()
@@ -375,8 +565,8 @@ public class LuaScope : LuaNamespace
         if (outline == true && beginLine != endLine && endLine != Int32.MaxValue)
         {
             TextSpan span = new TextSpan();
-            span.iStartLine = beginLine - 1;
-            span.iEndLine = endLine - 1;
+            span.iStartLine = beginLine;
+            span.iEndLine = endLine;
             span.iEndIndex = endIndx - 1;
             span.iStartIndex = beginIndx;
             sink.AddHiddenRegion(span);

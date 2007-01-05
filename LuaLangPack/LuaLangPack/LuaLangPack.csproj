@@ -108,6 +108,7 @@
     <Compile Include="lua.parser.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="LuaClasses.cs" />
     <Compile Include="LuaLangService.cs">
       <SubType>Code</SubType>
     </Compile>

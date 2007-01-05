@@ -1,10 +1,9 @@
 %lexer
 %declare{ public string str; public int blocknest; }
-%token LITERAL { 
-   public string s;
+%token NAME { public string s; }
+%token LITERAL : NAME { 
    public LITERAL( string a ){ s = a; }
 }
-%token NAME { public string s; }
 %token NUMBER { public double n; }
 %token COMMENT;
 

@@ -40,9 +40,9 @@ namespace Vsip.LuaLangPack
     /// </summary>
 
     [PackageRegistration(UseManagedResourcesOnly = true)]
-    [DefaultRegistryRoot("Software\\Microsoft\\VisualStudio\\8.0")]
-    [InstalledProductRegistration(true, "Lua Language Integration Pack", "Provides Lua 5.0 language integration with Visual Studio", "0.5a", IconResourceID = 400)]
-    [ProvideLoadKey("Standard", "0.5a", "Lua Language Integration Pack", "trystan.org", 110)]
+    [DefaultRegistryRoot("Software\\Microsoft\\VisualStudio\\8.0Exp")]
+    [InstalledProductRegistration(true, "Lua Language Integration Pack", "Provides Lua 5.0 language integration with Visual Studio", "0.3", IconResourceID = 400)]
+    [ProvideLoadKey("Standard", "0.3", "Lua Language Integration Pack", "Real Networks Inc.", 110)]
     [ProvideProjectFactory(typeof(LuaProjectFactory), "Lua Project", "LuaProject Project Files (*.luaproj);*.luaproj", "luaproj", "luaproj", "..\\Templates\\Projects")]
     [ProvideProjectItem(typeof(LuaProjectFactory), "Lua Items", "..\\Templates\\ProjectItems", 500)]
     [ProvideServiceAttribute(typeof(LuaLangService), ServiceName = "VS 2005 Lua Language Service")]
@@ -269,7 +269,7 @@ namespace Vsip.LuaLangPack
             return typeof(ProjectNode).Assembly.GetManifestResourceStream("Resources.Lua Project.ico");   
         }
 
-        public override Guid[] GetPropertyPageGuids()
+        protected override Guid[]  GetConfigurationIndependentPropertyPages()
         {
             Trace.WriteLine("LuaLangPack: Prop Page Guids");
             Guid[] result = new Guid[1];
@@ -286,7 +286,7 @@ namespace Vsip.LuaLangPack
        /// </summary>
        /// <param name="config"></param>
        /// <returns></returns>
-       public override Guid[] GetConfigurationDependentPropertyPages()
+       protected override Guid[] GetConfigurationDependentPropertyPages()
        {
           Trace.WriteLine("LuaLangPack: Conf Dependent Prop Page Guids");
           Guid[] result = new Guid[0];
