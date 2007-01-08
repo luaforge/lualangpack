@@ -1,0 +1,87 @@
+///////////////////////////////////////////////////////////////////////////////
+// This is the inverse grammar of luaVar.parser. We use this to determine 
+// the starting position of a var within a string. For instance, let us 
+// suppose we have the following Lua fragment.
+//
+// "local foo = sometable.bar()."
+//
+// When the last '.' is typed the MPF framework will call the plugin code
+// to determine the contents of the intellisense member selection popup.
+// In order to resolve the rvalue above we first need to work backwards
+// from the '.' to determine what var we're referencing. To do this we
+// reverse the string above, starting at the '.', and pass is to this parser. 
+// The result of the parse provides the start index of the var, in this case
+// the index of 's' in the reversed string. From that, we can deduce the index
+// of 's' in the original string. Then we take the substring if the original
+// string starting at 's' and ending just before the '.' and pass the result 
+// to the luaVar.parser parser which resolves the var based on information 
+// collected during the full parse.
+//
+// Also note, going in reverse we can't distinguing numbers from names lexically. 
+// We're just ignoring this for now, but it may cause some bugs.
+ 
+%parser reverseLua.lexer
+%namespace ReverseLangImpl
+%right MULT PLUS MINUS MOD DIVIDE CONCAT END FUNCTION COMMA NAME NEQ LT GT LE AND GE EQ OR LPAREN POUND NOT
+%left EXP ASSIGN
+
+var			: NAME 
+			| RBRACK exp LBRACK prefixexp
+			| NAME DOT prefixexp; 				
+
+fieldlist 	: field  
+			| field fieldsep fieldlist
+			| field fieldsep;
+				
+fieldsep	: COMMA 
+            | SEMICOLON;
+
+field		: exp ASSIGN RBRACK exp LBRACK
+			| exp ASSIGN NAME
+			| exp;                        
+		   					
+exp			: NIL                                                     
+            | FALSE                                                   
+            | TRUE                                                                                                   
+            | LITERAL
+			| prefixexp
+			| exp binop exp                                           
+			| exp unop;
+			
+explist		: exp COMMA explist
+			| exp;
+				
+functioncall   : arg prefixexp 
+	   		   | arg NAME COLON prefixexp;
+				
+prefixexp	: var                                          
+			| functioncall                                       
+			| RPAREN exp LPAREN;                                            
+
+arg			: RPAREN LPAREN                                          
+			| RPAREN explist LPAREN                                 
+			| tableconstructor                                        
+			| LITERAL;	
+				
+tableconstructor : RBRACE LBRACE                          
+				 | RBRACE fieldlist LBRACE;				
+				
+unop		: MINUS                                          
+            | NOT
+            | POUND;                                                  		
+	
+binop		: PLUS                                             
+            | MINUS 
+            | MULT 
+            | MOD
+            | DIVIDE 
+            | EXP 
+            | CONCAT
+            | LT 
+            | GT 
+            | GE 
+	 		| LE 
+	 		| EQ 
+	 		| AND
+	 		| OR
+	 		| NEQ;

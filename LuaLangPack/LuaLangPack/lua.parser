@@ -1,4 +1,12 @@
+///////////////////////////////////////////////////////////////////////////////
+// This is the primary parser and implements the complete Lua 5.0 grammar and 
+// enough abstract syntax to support the desired editor and intellisense
+// features. FillScope is called following a full file parse. This method 
+// recursively descends the ast and builds a data structure that represents
+// all lexical scopes and the names within them.    
+
 %parser lua.lexer
+%namespace LuaLangImpl
 %left MULT PLUS MINUS MOD DIVIDE CONCAT END FUNCTION COMMA NAME NEQ LT GT LE AND GE EQ OR LPAREN
 %right EXP ASSIGN
 
@@ -159,13 +167,16 @@
 	    f.FillScope( s );
 	}
     public void FillScope( LuaScope s, var v ){ // Global scope (unless var already declared local)
-        LuaTable table = v.ResolveTable( s );    
+        LuaTable table = new LuaTable();    
         table.line = close.Line - 1;
         table.pos  = close.Position;            
+        
         if( f != null ){  
             s.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1);            
             f.FillScope( s, table ); 
-        }                    
+        }
+        
+        v.Assign( s, table );                    
     }
     public void FillScope( LuaScope s, NAME n ){ // Local scope (local init production)
         LuaTable table = new LuaTable();
@@ -401,19 +412,29 @@
 
 ////////////////////////////// FUNCTION ///////////////////////////////////////
 %symbol function {
-   private funcbody f;
-   public function( funcbody a ){ f = a; } 
-   public void FillScope( LuaScope s ){
-	  f.FillScope( s );
-   }
-   public void FillScope( LuaScope s, var v_left )
-   {
-      f.FillScope( s );
-   }
-   public void FillScope( LuaScope s, NAME n_left )
-   {
-      f.FillScope( s );
-   }
+    private funcbody f;
+    public function( funcbody a ){ f = a; } 
+    public void FillScope( LuaScope s ){
+        f.FillScope( s );
+    }
+    public void FillScope( LuaScope s, var v_left )
+    {
+   	    LuaFunction fun = new LuaFunction();
+	    fun.name = "?anon?";
+   
+        f.FillScope( s, fun );
+        v_left.Assign( s, fun );
+    }
+    public void FillScope( LuaScope s, NAME n_left )
+    {
+       	LuaFunction fun = new LuaFunction();
+	    fun.name = n_left.s;
+	    fun.line = n_left.Line - 1;
+	    fun.pos  = n_left.Position;     
+   
+        f.FillScope( s, fun );
+        s.Add( fun );      
+    }
 } 
 
 
@@ -666,16 +687,16 @@
             s.Add( fun ); 
         }
     }
-    public virtual LuaTable ResolveTable( LuaScope s ) {
-        LuaTable t = s.LookupTable( n.s, n.Line - 1, n.Position ); 
-                                      // If table of NAME is already in lexical scope, return it.
-        if( t == null ) {             // if it is not declared then create a new table. In the case
-            t = new LuaTable();       // that it is new, it's guaranteed to also be global on this 
-            t.name = n.s;             // production.
-            s.GlobalScope().Add( t );    
-        } 
-        return t;
-   }
+//    public virtual LuaTable ResolveTable( LuaScope s ) {
+//        LuaTable t = s.LookupTable( n.s, n.Line - 1, n.Position ); 
+//                                      // If table of NAME is already in lexical scope, return it.
+//        if( t == null ) {             // if it is not declared then create a new table. In the case
+//            t = new LuaTable();       // that it is new, it's guaranteed to also be global on this 
+//            t.name = n.s;             // production.
+//            s.GlobalScope().Add( t );    
+//        } 
+//        return t;
+//   }
 }
 %node PackageRef : var {     // | prefixexp:a DOT NAME:b
     private NAME n;         
@@ -720,9 +741,9 @@
             
         BaseAssign( (LuaTable)left, rvalue, n );
     }
-    public override LuaTable ResolveTable( LuaScope s ) {
-        return null;
-    }
+//    public override LuaTable ResolveTable( LuaScope s ) {
+//        return null;
+//    }
 }
 %node TableRef : var {      // prefixexp:a LBRACK exp:b RBRACK
     private prefixexp p;
@@ -774,9 +795,9 @@
             
         BaseAssign( (LuaTable)left, rvalue, l );
     }
-    public override LuaTable ResolveTable( LuaScope s ) {
-        return null;
-    }
+//    public override LuaTable ResolveTable( LuaScope s ) {
+//        return null;
+//    }
 }
 
 
@@ -1036,7 +1057,7 @@ chunk			: stat:a												   %chunk( a )
 				| stat:a SEMICOLON										   %chunk( a )
 				| stat:a chunk:b										   %chunk( a, b )
 				| stat:a SEMICOLON chunk:b								   %chunk( a, b );
-				
+				  
 block			: chunk:a												   %block( a )
                 |                                                          %block();
 

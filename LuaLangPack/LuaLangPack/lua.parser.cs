@@ -1,4 +1,5 @@
 using System;using Tools;
+namespace LuaLangImpl {
 //%+chunk+54
 public class chunk : SYMBOL{
  stat  s ;
@@ -140,12 +141,13 @@ public class tableconstructor : SYMBOL{
 }
  public  void  FillScope ( LuaScope  s ){ f . FillScope ( s );
 }
- public  void  FillScope ( LuaScope  s , var  v ){ LuaTable  table = v . ResolveTable ( s );
+ public  void  FillScope ( LuaScope  s , var  v ){ LuaTable  table = new  LuaTable ();
  table . line = close . Line -1;
  table . pos = close . Position ;
  if ( f != null ){ s . DeclareRegion ( open . Line -1, open . Position , close . Line -1, close . Position -1);
  f . FillScope ( s , table );
 }
+ v . Assign ( s , table );
 }
  public  void  FillScope ( LuaScope  s , NAME  n ){ LuaTable  table = new  LuaTable ();
  table . name = n . s ;
@@ -340,9 +342,17 @@ public class function : SYMBOL{
 }
  public  void  FillScope ( LuaScope  s ){ f . FillScope ( s );
 }
- public  void  FillScope ( LuaScope  s , var  v_left ){ f . FillScope ( s );
+ public  void  FillScope ( LuaScope  s , var  v_left ){ LuaFunction  fun = new  LuaFunction ();
+ fun . name ="?anon?";
+ f . FillScope ( s , fun );
+ v_left . Assign ( s , fun );
 }
- public  void  FillScope ( LuaScope  s , NAME  n_left ){ f . FillScope ( s );
+ public  void  FillScope ( LuaScope  s , NAME  n_left ){ LuaFunction  fun = new  LuaFunction ();
+ fun . name = n_left . s ;
+ fun . line = n_left . Line -1;
+ fun . pos = n_left . Position ;
+ f . FillScope ( s , fun );
+ s . Add ( fun );
 }
 
 public override string yyname { get { return "function"; }}
@@ -546,13 +556,6 @@ public class var : SYMBOL{
  s . Add ( fun );
 }
 }
- public  virtual  LuaTable  ResolveTable ( LuaScope  s ){ LuaTable  t = s . LookupTable ( n . s , n . Line -1, n . Position );
- if ( t == null ){ t = new  LuaTable ();
- t . name = n . s ;
- s . GlobalScope (). Add ( t );
-}
- return  t ;
-}
 
 public override string yyname { get { return "var"; }}
 public override int yynum { get { return 70; }}
@@ -587,8 +590,6 @@ public class PackageRef : var{
  public  override  void  Assign ( LuaScope  s , ILuaName  rvalue ){ ILuaName  left = p . Resolve ( s );
  if ( left == null || left . type != LuaType . Table ) return ;
  BaseAssign (( LuaTable ) left , rvalue , n );
-}
- public  override  LuaTable  ResolveTable ( LuaScope  s ){ return  null ;
 }
 
 public override string yyname { get { return "PackageRef"; }}
@@ -629,8 +630,6 @@ public class TableRef : var{
  ILuaName  l = e . Resolve ( s );
  if ( left == null || left . type != LuaType . Table ) return ;
  BaseAssign (( LuaTable ) left , rvalue , l );
-}
- public  override  LuaTable  ResolveTable ( LuaScope  s ){ return  null ;
 }
 
 public override string yyname { get { return "TableRef"; }}
@@ -6225,3 +6224,4 @@ public syntax(YyParser syms):base(syms,new tokens()) {}
 public syntax(YyParser syms,ErrorHandler erh):base(syms,new tokens(erh)) {}
 
  }
+}

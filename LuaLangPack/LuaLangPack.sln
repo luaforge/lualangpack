@@ -8,6 +8,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LuaLangPack.eap = LuaLangPack.eap
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LangImpl", "LangImpl", "{C4BF096C-7DAC-4637-97CF-80FADBEADD84}"
+	ProjectSection(SolutionItems) = preProject
+		LuaLangPack\lua.lexer = LuaLangPack\lua.lexer
+		LuaLangPack\lua.parser = LuaLangPack\lua.parser
+		LuaLangPack\luaVar.lexer = LuaLangPack\luaVar.lexer
+		LuaLangPack\luaVar.parser = LuaLangPack\luaVar.parser
+		LuaLangPack\reverseLua.lexer = LuaLangPack\reverseLua.lexer
+		LuaLangPack\reverseVar.parser = LuaLangPack\reverseVar.parser
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

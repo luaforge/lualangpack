@@ -25,6 +25,15 @@ namespace Vsip.LuaLangPack
         private LuaScope m_globalScope = new LuaScope(null);
         private Hashtable m_fileScopes = new Hashtable();
 
+        static public string StringReverse(string str)
+        {
+            int len = str.Length;
+            char[] charArray = new char[len];     
+            for (int i = 1; i < len; i++)
+                charArray[i - 1] = str[len - i];
+            return new string(charArray);
+        }
+
         public override Source CreateSource(IVsTextLines buffer)
         {
             m_source = new LuaSource(this, buffer, GetColorizer(buffer));
@@ -60,86 +69,100 @@ namespace Vsip.LuaLangPack
         {
             req.Sink.ProcessHiddenRegions = false;
 
+            ///////////////////////////////////////////////////////////////////
+            // Handle Intellisense popup contents /////////////////////////////
             if (req.Reason == ParseReason.MemberSelect ||
                 req.Reason == ParseReason.MemberSelectAndHighlightBraces)
             {
-                // use m_scanner to get the token just before the token on the line and 
-                // col passed to us. Then populate m_authscope. We can start at the file scope
-                // structure and work our way down until we find the block we're working in.
-                // Then we work back up from there searching for a match for our token.
+                LuaTable resolvedT = null;
                 m_authScope.m_luaDec.ClearDeclarations();
-                TOKEN tok = null;
-                Lexer lexer = new tokens();
+
+                LuaScope fileScope = (LuaScope)m_fileScopes[req.FileName];
+                if (fileScope == null)
+                    return m_authScope;
+
+                LuaScope enclosing = fileScope.FindEnclosingScope(req.Line);
+                if (enclosing == null)
+                    enclosing = m_globalScope;
                     
                 string line = m_source.GetLine(req.Line);
                 int indx = req.TokenInfo.StartIndex;
 
-                if (line[indx] == '.') // Table dereference, get previous name
+                if (line[indx] == '.') // Table dereference, resolve lvalue
                 {
-                    m_authScope.m_luaDec.SupressIntrinsics();
-                    lexer.Start(line);
+                    m_authScope.m_luaDec.SupressIntrinsics(); // don't show keywords ect.
 
-                    do
+                    // Reverse parse string to find var we're referencing
+                    string rev = StringReverse(line.Substring(0, indx));
+                    string var = null;
+                    Parser p = new ReverseLangImpl.syntax();
+                    SYMBOL ast;
+                    ast = p.Parse(rev);
+                    if (ast == null)
+                        return m_authScope;
+                    else if (ast.yyname == "error")
+                        var = line.Substring(indx - ast.Position, ast.Position);
+                    else
+                        var = line.Substring(indx - ast.yylx.yypos, ast.yylx.yypos);
+
+                    // Forward parse var for resolution to value
+                    p = new LuaVarParser.syntax();
+                    ast = p.Parse(var);
+
+                    if (ast != null)
                     {
-                        tok = lexer.Next();
-                    } while (lexer.yypos < indx);
-                }
-
-                LuaScope fileScope = (LuaScope)m_fileScopes[req.FileName];
-
-                if (fileScope != null)
-                {
-                    LuaScope scope = fileScope.FindEnclosingScope(req.Line);
-                    if (scope == null)
-                        scope = m_globalScope;
-
-                    if (tok != null)
-                    {
-                        LuaTable table = (LuaTable)scope.Lookup(tok.yytext, req.Line, indx);
-                        if (table != null && table.type == LuaType.Table)
+                        if (ast.yyname == "error")
+                            Console.Write("Parse Error: " + ast.Pos);
+                        else
                         {
-                            LinkedList<LuaName> names = table.GetNames(req.Line, indx);
+                            LuaVarParser.var node = (LuaVarParser.var)ast;
+                            resolvedT = (LuaTable)node.Resolve( enclosing, req.Line, indx );
+                            if (resolvedT == null || resolvedT.type != LuaType.Table)
+                                return m_authScope;
+
+                            LinkedList<LuaName> names = resolvedT.GetNames(req.Line, indx);
                             foreach (LuaName n in names)
                                 m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE);
 
-                            LinkedList<LuaTable> tables = table.GetTables(req.Line, indx);
+                            LinkedList<LuaTable> tables = resolvedT.GetTables(req.Line, indx);
                             foreach (LuaTable t in tables)
                                 m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE);
 
-                            LinkedList<LuaFunction> funs = table.GetFunctions(req.Line, indx);
+                            LinkedList<LuaFunction> funs = resolvedT.GetFunctions(req.Line, indx);
                             foreach (LuaFunction f in funs)
                                 m_authScope.m_luaDec.AddDeclaration(f.name, METHOD);
                         }
                     }
-                    else
+                }
+                else
+                {
+                    // m_authScope.m_luaDec.EnableIntrinsics();
+                    do
                     {
-    //                    m_authScope.m_luaDec.EnableIntrinsics();
+                        LinkedList<LuaName> names = enclosing.GetNames(req.Line, indx);
+                        foreach (LuaName n in names)
+                            m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE);
 
-                        do
-                        {
-                            LinkedList<LuaName> names = scope.GetNames(req.Line, indx);
-                            foreach (LuaName n in names)
-                                m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE);
+                        LinkedList<LuaTable> tables = enclosing.GetTables(req.Line, indx);
+                        foreach (LuaTable t in tables)
+                            m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE);
 
-                            LinkedList<LuaTable> tables = scope.GetTables(req.Line, indx);
-                            foreach (LuaTable t in tables)
-                                m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE);
+                        LinkedList<LuaFunction> funs = enclosing.GetFunctions(req.Line, indx);
+                        foreach (LuaFunction f in funs)
+                            m_authScope.m_luaDec.AddDeclaration(f.name, METHOD);
 
-                            LinkedList<LuaFunction> funs = scope.GetFunctions(req.Line, indx);
-                            foreach (LuaFunction f in funs)
-                                m_authScope.m_luaDec.AddDeclaration(f.name, METHOD);
-
-                            scope = scope.Parent();
-                        } while (scope != null);
-                    }
+                        enclosing = enclosing.Parent();
+                    } while (enclosing != null);
                 }            
             }
-            else if (req.Reason == ParseReason.Check) // full file parse
+            ///////////////////////////////////////////////////////////////////
+            // Handle Full File Parse /////////////////////////////////////////
+            else if (req.Reason == ParseReason.Check)
             {
                 LuaScope fileScope = new LuaScope( m_globalScope );
                 fileScope.beginLine = 0;
                 fileScope.endLine = Int32.MaxValue;
-                Parser p = new syntax();
+                Parser p = new LuaLangImpl.syntax();
                 SYMBOL ast;
                 ast = p.Parse(req.Text);
 
@@ -149,7 +172,7 @@ namespace Vsip.LuaLangPack
                         Console.Write("Parse Error: " + ast.Pos);
                     else if (ast.yyname == "chunk")
                     {
-                        chunk node = (chunk)ast;
+                        LuaLangImpl.chunk node = (LuaLangImpl.chunk)ast;
                         node.FillScope(fileScope);
                         fileScope.AddRegions(req.Sink);
                         req.Sink.ProcessHiddenRegions = true;

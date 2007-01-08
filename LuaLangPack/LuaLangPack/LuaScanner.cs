@@ -12,7 +12,7 @@ namespace Vsip.LuaLangPack
     class LuaScanner : IScanner 
     {
         private Hashtable tokenInf = new Hashtable();
-        private Lexer lexer = new tokens();
+        private Lexer lexer = new LuaLangImpl.tokens();
         private string srcBuf;
         private int nestBlock = 0;
         private int yypos = 0;

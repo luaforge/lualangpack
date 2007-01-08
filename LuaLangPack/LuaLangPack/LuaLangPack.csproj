@@ -116,6 +116,10 @@
     <Compile Include="LuaScanner.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="luaVar.lexer.cs" />
+    <Compile Include="luaVar.parser.cs" />
+    <Compile Include="reverseLua.lexer.cs" />
+    <Compile Include="reverseVar.parser.cs" />
     <Compile Include="source.cs" />
     <Compile Include="VSPackage.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -136,8 +140,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
-    <None Include="lua.lexer" />
-    <None Include="lua.parser" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Lua Project.ico" />
@@ -164,7 +166,12 @@
   <PropertyGroup>
     <PreBuildEvent>cd ..
 lg.exe lua.lexer
-pg.exe lua.parser</PreBuildEvent>
+pg.exe lua.parser
+lg.exe luaVar.lexer
+pg.exe luaVar.parser
+lg.exe reverseLua.lexer
+pg.exe reverseVar.parser
+</PreBuildEvent>
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>

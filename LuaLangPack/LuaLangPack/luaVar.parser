@@ -1,0 +1,255 @@
+///////////////////////////////////////////////////////////////////////////////
+// This is a subset of the Lua grammar that parses only a 'var'. This is used 
+// to resolve a var for display of intellisense member select information. For
+// example, consider the following Lua fragment (assume both names are tables).
+//
+// foo.bar.
+//
+// In order to display the contents of bar we need to parse the var 'foo.bar'
+// and then call Resolve on the resulting abstract syntax tree. The Resovle 
+// method takes the current scope as an argument for contextual information.  
+
+%parser luaVar.lexer
+%namespace LuaVarParser
+%left MULT PLUS MINUS MOD DIVIDE CONCAT END FUNCTION COMMA NAME NEQ LT GT LE AND GE EQ OR LPAREN
+%right EXP ASSIGN
+
+
+///////////////////////////// FIELD ///////////////////////////////////////////
+%symbol field {
+   private exp e;
+   public field( exp a ){ e = a; }
+}
+%node FieldExpAssign : field {
+   private exp e1;
+   private exp e2;
+   public FieldExpAssign( exp a, exp b ){ e1 = a; e2 = b; }
+}
+%node FieldAssign : field {
+   private NAME n;
+   private exp e;
+   public FieldAssign( NAME a, exp b ){ n = a; e = b; }
+}
+
+
+////////////////////////////// FIELD LIST /////////////////////////////////////
+%symbol fieldlist {
+   private fieldlist fl;
+   private field f;
+   public fieldlist( field a, fieldlist b ){ f = a; fl = b; }
+   public fieldlist( field a ){ f = a; }
+}
+
+
+////////////////////////////// TABLE //////////////////////////////////////////
+%symbol tableconstructor {
+	private fieldlist f;
+	private LBRACE open;
+	private RBRACE close;
+	public tableconstructor( fieldlist a, LBRACE b, RBRACE c ){ f = a; open = b; close = c; }
+}
+
+
+///////////////////////////// FUNCTION CALL ///////////////////////////////////
+%symbol functioncall {
+    private prefixexp p;
+    private arg m_a;
+	public functioncall( prefixexp a, arg b ){ p = a; m_a = b; }
+	public ILuaName Resolve( LuaScope s, int line, int pos ){	  
+	    ILuaName fname = p.Resolve( s, line, pos );
+	    if( fname == null )
+	        return null;
+	        
+	    LuaFunction fun = (LuaFunction)s.Lookup(fname.name, line, pos);
+	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
+	        return null;
+	    else {
+	        return fun.RetStats.First.Value.Resolve( s );        
+	    }                         
+	}
+}
+
+
+///////////////////////////// PREFIX EXPRESSION ///////////////////////////////
+%symbol prefixexp {
+    private var v;
+    private functioncall fc;
+    private exp e;
+    public prefixexp( var a ){ v = a; }
+    public prefixexp( functioncall a ){ fc = a; }
+    public prefixexp( exp a ){ e = a; }
+    public ILuaName Resolve( LuaScope s, int line, int pos ){
+        if( v != null ){
+            return v.Resolve( s, line, pos );
+        }        
+        else if( fc != null ){
+            return fc.Resolve( s, line, pos );
+        }
+        else
+            return null;
+    }
+}
+
+
+///////////////////////////// EXPRESSION //////////////////////////////////////
+%symbol exp {
+   private prefixexp p;
+   private tableconstructor t;
+   private bool nil = false;
+   private bool number = false;
+   private bool bfalse = false;
+   private bool btrue = false;
+   private LITERAL l;   
+   public exp( prefixexp b ){ p = b; }
+   public exp( NIL a ){ nil = true; }
+   public exp( FALSE a ){ bfalse = true; }
+   public exp( TRUE a ){ btrue = true; }
+   public exp( NUMBER a ){ number = true; }
+   public exp( tableconstructor c ){ t = c; }
+   public exp( LITERAL d ){ l = d; }
+    
+   public ILuaName Resolve( LuaScope s, int line, int pos ){
+      if( l != null )
+      {
+        LuaName name = new LuaName();
+        name.name = l.s;
+        name.pos = l.Position;
+        name.line = l.Line - 1;
+        return name;
+      }
+      else
+        return null;
+                
+                // TODO: We need to extend this to cover prefixexp productions 
+                // that reduce to LITERAL.
+   } 
+}
+
+
+///////////////////////////// EXPRESSION LIST /////////////////////////////////
+%symbol explist {
+	private explist l;
+	private exp e;
+	public explist( exp a, explist b ){ e = a; l = b; }
+	public explist( exp a ){ e = a; }
+	public ILuaName Resolve( LuaScope s, int line, int pos ){
+	    return e.Resolve( s, line, pos );
+	}
+}
+
+
+///////////////////////////// VARIABLE ////////////////////////////////////////
+%symbol var {
+    private NAME n;
+    public var( NAME a ){ n = a; }
+    public virtual ILuaName Resolve( LuaScope s, int line, int pos ){
+        return s.Lookup(n.s, line, pos);        
+    }
+}
+%node PackageRef : var {     // | prefixexp:a DOT NAME:b
+    private NAME n;         
+    private prefixexp p;
+    public PackageRef( prefixexp a, NAME b ){ p = a; n = b; }
+    public override ILuaName Resolve( LuaScope s, int line, int pos ){
+        ILuaName name = p.Resolve( s, line, pos );
+        
+        if( name != null && name.type == LuaType.Table ){
+            LuaTable t = (LuaTable)name;
+            return t.Lookup(n.s, line, pos); 
+        }
+        else
+            return null;       
+    }
+}
+%node TableRef : var {      // prefixexp:a LBRACK exp:b RBRACK
+    private prefixexp p;
+    private exp e;
+    public TableRef( prefixexp a, exp b ){ p = a; e = b; }
+    public override ILuaName Resolve( LuaScope s, int line, int pos ){
+        ILuaName name = p.Resolve( s, line, pos );
+        ILuaName l = e.Resolve( s, line, pos );
+        
+        if( name != null && name.type == LuaType.Table ){
+            LuaTable t = (LuaTable)name;
+            return t.Lookup(l.name, l.line, l.pos); 
+        }
+        else
+            return null;       
+    }
+}
+
+////////////////////////////// ARGUMENT ///////////////////////////////////////
+%symbol arg {
+   private explist e;
+   private tableconstructor t;
+   public arg( tableconstructor a ){ t = a; }
+   public arg( explist a ){ e = a; }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////// GRAMMAR PRODUCTIONS /////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+var			: NAME:a                                                       %var( a ) 
+			| prefixexp:a LBRACK exp:b RBRACK                              %TableRef( a, b ) 
+			| prefixexp:a DOT NAME:b                                       %PackageRef( a, b );   				
+
+fieldlist 	: field:a                                                  %fieldlist( a )
+			| field:a fieldsep fieldlist:b                             %fieldlist( a, b )
+			| field:a fieldsep                                         %fieldlist( a );
+				
+fieldsep	: COMMA 
+            | SEMICOLON;
+
+field		: LBRACK exp:a RBRACK ASSIGN exp:b                            %FieldExpAssign( a, b )
+			| NAME:a ASSIGN exp:b                                         %FieldAssign( a, b )
+			| exp:a                                                       %field( a );                        
+		   					
+exp			: NIL:a                                                        %exp( a )                                                     
+            | FALSE:a                                                      %exp( a )                                                   
+            | TRUE:a                                                       %exp( a )                                                     
+            | NUMBER:a                                                     %exp( a )                                                
+            | LITERAL:a                                                    %exp( a )
+			| prefixexp:a                                                  %exp( a ) 
+			| exp binop exp                                           
+			| unop exp;
+			
+explist		: exp:a COMMA explist:b                                        %explist( a,b )
+			| exp:a                                                        %explist( a );
+				
+functioncall   : prefixexp:a arg:b            							   %functioncall( a, b )
+	   		   | prefixexp:a COLON NAME arg:b                              %functioncall( a, b );
+				
+prefixexp	: var:a                                                        %prefixexp( a )
+			| functioncall:a                                               %prefixexp( a )   
+			| LPAREN exp:a RPAREN                                          %prefixexp( a );                                            
+
+arg			: LPAREN RPAREN                                          
+			| LPAREN explist:a RPAREN                                      %arg( a )
+			| tableconstructor:a                                           %arg( a )
+			| LITERAL;	
+				
+tableconstructor : LBRACE:b RBRACE:c                                       %tableconstructor( null, b, c )
+				 | LBRACE:b fieldlist:a RBRACE:c                           %tableconstructor( a, b, c );				
+				
+unop		: MINUS                                          
+            | NOT
+            | POUND;                                                  		
+	
+binop		: PLUS                                             
+            | MINUS 
+            | MULT 
+            | MOD
+            | DIVIDE 
+            | EXP 
+            | CONCAT
+            | LT 
+            | GT 
+            | GE 
+	 		| LE 
+	 		| EQ 
+	 		| AND
+	 		| OR
+	 		| NEQ;
+	 		

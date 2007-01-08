@@ -1,5 +1,5 @@
 using System;using Tools;
-namespace LuaLangImpl {
+namespace LuaVarParser {
 //%+NAME+3
 public class NAME : TOKEN{
  public  string  s ;

@@ -387,23 +387,23 @@ public class RetValSet : ILuaName
     }
     #endregion
 
-    public RetValSet(explist e)
+    public RetValSet(LuaLangImpl.explist e)
     {
         m_retVals = e;
     }
-    public void FillScope(LuaScope s, varlist vl)
+    public void FillScope(LuaScope s, LuaLangImpl.varlist vl)
     {
         m_retVals.FillScope(s, vl);
     }
-    public void FillScope(LuaScope s, namelist nl)
+    public void FillScope(LuaScope s, LuaLangImpl.namelist nl)
     {
         m_retVals.FillScope(s, nl);
     }
-    public void FillScope(LuaScope s, var v)
+    public void FillScope(LuaScope s, LuaLangImpl.var v)
     {
         m_retVals.FillScope(s, v);
     }
-    public void FillScope(LuaScope s, NAME n)
+    public void FillScope(LuaScope s, LuaLangImpl.NAME n)
     {
         m_retVals.FillScope(s, n);
     }
@@ -416,7 +416,7 @@ public class RetValSet : ILuaName
     private int m_pos = 0;
     private string m_name;
     private LuaType m_type = LuaType.RetValSet;
-    private explist m_retVals;
+    private LuaLangImpl.explist m_retVals;
 }
 
 public class LuaFunction : ILuaName
@@ -451,8 +451,8 @@ public class LuaFunction : ILuaName
         m_pos = f.m_pos;
         m_type = f.m_type;
     }
-    
-    public void Add( explist e )
+
+    public void Add(LuaLangImpl.explist e)
     {
         m_retVals.AddLast(new RetValSet(e)); 
     }
