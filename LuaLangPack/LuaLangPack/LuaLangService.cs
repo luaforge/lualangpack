@@ -22,7 +22,7 @@ namespace Vsip.LuaLangPack
         private LuaScanner m_scanner;
         private LuaAuthScope m_authScope = new LuaAuthScope();
         private LuaSource m_source;
-        private LuaScope m_globalScope = new LuaScope(null);
+        private LuaScope m_globalScope = new LuaScope((LuaScope)null);
         private Hashtable m_fileScopes = new Hashtable();
 
         static public string StringReverse(string str)
@@ -90,8 +90,6 @@ namespace Vsip.LuaLangPack
 
                 if (line[indx] == '.') // Table dereference, resolve lvalue
                 {
-                    m_authScope.m_luaDec.SupressIntrinsics(); // don't show keywords ect.
-
                     // Reverse parse string to find var we're referencing
                     string rev = StringReverse(line.Substring(0, indx));
                     string var = null;
@@ -115,41 +113,43 @@ namespace Vsip.LuaLangPack
                             Console.Write("Parse Error: " + ast.Pos);
                         else
                         {
-                            LuaVarParser.var node = (LuaVarParser.var)ast;
-                            resolvedT = (LuaTable)node.Resolve( enclosing, req.Line, indx );
-                            if (resolvedT == null || resolvedT.type != LuaType.Table)
+                            LuaVarParser.chunk node = (LuaVarParser.chunk)ast;
+                            ILuaName resolvedN = node.Resolve( enclosing, req.Line, indx );
+                            if (resolvedN == null || resolvedN.type != LuaType.Table)
                                 return m_authScope;
+                            else
+                                resolvedT = (LuaTable)resolvedN;
 
                             LinkedList<LuaName> names = resolvedT.GetNames(req.Line, indx);
                             foreach (LuaName n in names)
-                                m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE);
+                                m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE, n.line, n.pos);
 
                             LinkedList<LuaTable> tables = resolvedT.GetTables(req.Line, indx);
                             foreach (LuaTable t in tables)
-                                m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE);
+                                m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE, t.line, t.pos);
 
                             LinkedList<LuaFunction> funs = resolvedT.GetFunctions(req.Line, indx);
                             foreach (LuaFunction f in funs)
-                                m_authScope.m_luaDec.AddDeclaration(f.name, METHOD);
+                                m_authScope.m_luaDec.AddDeclaration(f.name, METHOD, f.line, f.pos);
                         }
                     }
                 }
                 else
                 {
-                    // m_authScope.m_luaDec.EnableIntrinsics();
+                    m_authScope.m_luaDec.EnableIntrinsics();
                     do
                     {
                         LinkedList<LuaName> names = enclosing.GetNames(req.Line, indx);
                         foreach (LuaName n in names)
-                            m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE);
+                            m_authScope.m_luaDec.AddDeclaration(n.name, VARIABLE, n.line, n.pos);
 
                         LinkedList<LuaTable> tables = enclosing.GetTables(req.Line, indx);
                         foreach (LuaTable t in tables)
-                            m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE);
+                            m_authScope.m_luaDec.AddDeclaration(t.name, NAMESPACE, t.line, t.pos);
 
                         LinkedList<LuaFunction> funs = enclosing.GetFunctions(req.Line, indx);
                         foreach (LuaFunction f in funs)
-                            m_authScope.m_luaDec.AddDeclaration(f.name, METHOD);
+                            m_authScope.m_luaDec.AddDeclaration(f.name, METHOD, f.line, f.pos);
 
                         enclosing = enclosing.Parent();
                     } while (enclosing != null);
@@ -173,7 +173,15 @@ namespace Vsip.LuaLangPack
                     else if (ast.yyname == "chunk")
                     {
                         LuaLangImpl.chunk node = (LuaLangImpl.chunk)ast;
-                        node.FillScope(fileScope);
+                        try
+                        {
+                            fileScope.FileScope = fileScope;
+                            node.FillScope(fileScope);
+                        }
+                        catch (NullReferenceException nr)
+                        {
+                         
+                        }
                         fileScope.AddRegions(req.Sink);
                         req.Sink.ProcessHiddenRegions = true;
 
@@ -221,58 +229,68 @@ namespace Vsip.LuaLangPack
             internal class LuaDeclarations : Declarations
             {
                 private const int KEYWORD = 206;
-                private int m_reservedCount = 0;
-                private List<Declaration> m_decs = new List<Declaration>(30);
+                private SortedList<string, Declaration> m_decs = new SortedList<string, Declaration>(100);
                 private List<Declaration> m_reserved = new List<Declaration>(21);
+                private Dictionary<string, int> m_dups = new Dictionary<string, int>(100);
            
                 public LuaDeclarations()
                 {
-                    m_reserved.Add(new Declaration("and", KEYWORD));
-                    m_reserved.Add(new Declaration("break", KEYWORD));
-                    m_reserved.Add(new Declaration("do", KEYWORD));
-                    m_reserved.Add(new Declaration("else", KEYWORD));
-                    m_reserved.Add(new Declaration("elseif", KEYWORD));
-                    m_reserved.Add(new Declaration("end", KEYWORD));
-                    m_reserved.Add(new Declaration("false", KEYWORD));
-                    m_reserved.Add(new Declaration("for", KEYWORD));
-                    m_reserved.Add(new Declaration("function", KEYWORD));
-                    m_reserved.Add(new Declaration("if", KEYWORD));
-                    m_reserved.Add(new Declaration("in", KEYWORD));
-                    m_reserved.Add(new Declaration("local", KEYWORD));
-                    m_reserved.Add(new Declaration("nil", KEYWORD));
-                    m_reserved.Add(new Declaration("not", KEYWORD));
-                    m_reserved.Add(new Declaration("or", KEYWORD));
-                    m_reserved.Add(new Declaration("repeat", KEYWORD));
-                    m_reserved.Add(new Declaration("return", KEYWORD));
-                    m_reserved.Add(new Declaration("until", KEYWORD));
-                    m_reserved.Add(new Declaration("then", KEYWORD));
-                    m_reserved.Add(new Declaration("true", KEYWORD));
-                    m_reserved.Add(new Declaration("while", KEYWORD));   
-                }
-
-                public void SupressIntrinsics()
-                {
-                    m_reservedCount = 0;
+                    m_reserved.Add(new Declaration("and", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("break", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("do", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("else", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("elseif", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("end", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("false", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("for", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("function", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("if", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("in", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("local", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("nil", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("not", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("or", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("repeat", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("return", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("until", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("then", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("true", KEYWORD, Int32.MaxValue, Int32.MaxValue));
+                    m_reserved.Add(new Declaration("while", KEYWORD, Int32.MaxValue, Int32.MaxValue));   
                 }
 
                 public void EnableIntrinsics()
                 {
-                    m_reservedCount = m_reserved.Count;
+                    foreach (Declaration dec in m_reserved)
+                        m_decs.Add(dec.name, dec);
                 }
 
-                public void AddDeclaration(string dec, int glyph)
+                public void AddDeclaration(string dec, int glyph, int line, int pos)
                 {
-                    m_decs.Add(new Declaration(dec, glyph));
+                    // TODO: may need to revisit when union/intersection types are implemented 
+                    Declaration decl = null;
+
+                    if( m_decs.ContainsKey(dec) ) 
+                        decl = m_decs[dec];
+
+                    if (decl == null)
+                    {
+                        m_decs.Add(dec, new Declaration(dec, glyph, line, pos));
+                    }
+                    else if (decl.line < line || (decl.line == line && decl.pos < pos))
+                    {
+                        m_decs[dec] = new Declaration(dec, glyph, line, pos);
+                    }
                 }
                 
                 public void ClearDeclarations()
                 {
                     m_decs.Clear();
+                    m_dups.Clear();
                 }
 
                 public override int GetCount()
                 {
-                    return m_decs.Count + m_reservedCount;
+                    return m_decs.Count;
                 }
 
                 public override string GetDescription(int index)
@@ -282,18 +300,18 @@ namespace Vsip.LuaLangPack
 
                 public override string GetDisplayText(int index)
                 {
-                    if (index >= m_reservedCount)
-                        return m_decs[index - m_reservedCount].name;
+                    if (index < m_decs.Count)
+                        return m_decs.Values[index].name;
                     else
-                        return m_reserved[index].name;
+                        return " ";
                 }
 
                 public override int GetGlyph(int index)
                 {
-                    if (index >= m_reservedCount)
-                        return m_decs[index - m_reservedCount].glyph;
+                    if (index < m_decs.Count)
+                        return m_decs.Values[index].glyph;
                     else
-                        return m_reserved[index].glyph;
+                        return 0;
                 }
 
                 public override string GetName(int index)
@@ -302,22 +320,26 @@ namespace Vsip.LuaLangPack
                         return " ";  // if we don't catch this. could not find docs on this but returning
                     else             // a space seems to have the desired behavior
                     {
-                        if (index >= m_reservedCount)
-                            return m_decs[index - m_reservedCount].name;
+                        if (index < m_decs.Count)
+                            return m_decs.Values[index].name;
                         else
-                            return m_reserved[index].name;
+                            return " ";
                     }
                 }
 
                 internal class Declaration
                 {
-                    public Declaration(string n, int g)
+                    public Declaration(string n, int g, int l, int p)
                     {
                         name = n;
                         glyph = g;
+                        line = l;
+                        pos = p;
                     }
                     public string name;
                     public int glyph;
+                    public int line;
+                    public int pos;
                 }
             }
         }

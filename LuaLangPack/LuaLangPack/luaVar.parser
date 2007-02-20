@@ -15,6 +15,22 @@
 %right EXP ASSIGN
 
 
+%symbol chunk {
+    private var v;
+    private functioncall fc;
+    public chunk( var a ){ v = a; }
+    public chunk( functioncall a ){ fc = a; }
+    public ILuaName Resolve( LuaScope s, int line, int pos ){ 
+        if( v != null )
+            return v.Resolve( s, line, pos );
+        else if( fc != null )
+            return fc.Resolve( s, line, pos );
+        else
+            return null;
+    }
+}
+
+
 ///////////////////////////// FIELD ///////////////////////////////////////////
 %symbol field {
    private exp e;
@@ -64,7 +80,7 @@
 	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
 	        return null;
 	    else {
-	        return fun.RetStats.First.Value.Resolve( s );        
+	        return fun.RetStats.First.Value.Resolve( fun.Scope );        
 	    }                         
 	}
 }
@@ -190,6 +206,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// GRAMMAR PRODUCTIONS /////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+chunk       : var:a                                                       %chunk( a )
+            | functioncall:a                                              %chunk( a );
 
 var			: NAME:a                                                       %var( a ) 
 			| prefixexp:a LBRACK exp:b RBRACK                              %TableRef( a, b ) 

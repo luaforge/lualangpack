@@ -55,24 +55,25 @@
     public void FillScope( LuaScope scope, int begline, int begchar, int endline, int endchar, bool outline ){
 	    if( c != null ) {
 	        LuaScope nested = new LuaScope( scope );
-	        c.FillScope( nested );
 	        nested.beginLine = begline;
 	        nested.beginIndx = begchar;
 	        nested.endLine = endline;
 	        nested.endIndx = endchar;
 	        nested.outline = outline;
+	        c.FillScope( nested );
 	        scope.nested.AddLast( nested );
 	    }
 	}
 	public void FillScope( LuaScope scope, LuaFunction f, int begline, int begchar, int endline, int endchar, bool outline ){
 	    if( c != null ) {
 	        LuaScope nested = new LuaScope( scope );
-	        c.FillScope( nested, f );
+	        f.Scope = nested;
 	        nested.beginLine = begline;
 	        nested.beginIndx = begchar;
 	        nested.endLine = endline;
 	        nested.endIndx = endchar;
 	        nested.outline = outline;
+	        c.FillScope( nested, f );
 	        scope.nested.AddLast( nested );
 	    }
 	}
@@ -121,15 +122,8 @@
       e.FillScope( s );
    }
    public override void FillScope( LuaScope s, LuaTable t ){
-      e.FillScope( s );
-      // TODO: we need to see if exp is a table or function. If so, we need to fill
-      // the appropriate stucture and add it to the table's function or table hash.
-      // For now, we'll just store the names
-      LuaName name = new LuaName();
-      name.name = n.s;
-      name.line = n.Line - 1;
-      name.pos  = n.Position;
-      t.Add( name );
+      t.SetEnclosingScope( s );
+      e.FillScope( (LuaScope)t, n );
    }
 }
 
@@ -163,8 +157,12 @@
 	private LBRACE open;
 	private RBRACE close;
 	public tableconstructor( fieldlist a, LBRACE b, RBRACE c ){ f = a; open = b; close = c; }
-	public void FillScope( LuaScope s ){
-	    f.FillScope( s );
+	public void FillScope( LuaScope s ){ // 'anonymous' constructor
+	    if (f != null)
+	    {
+	        s.FileScope.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1 );
+	        f.FillScope( s );
+	    }
 	}
     public void FillScope( LuaScope s, var v ){ // Global scope (unless var already declared local)
         LuaTable table = new LuaTable();    
@@ -172,7 +170,7 @@
         table.pos  = close.Position;            
         
         if( f != null ){  
-            s.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1);            
+            s.FileScope.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1);            
             f.FillScope( s, table ); 
         }
         
@@ -184,7 +182,7 @@
         table.line = close.Line - 1;
         table.pos  = close.Position;
         if( f != null ){
-            s.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1 );
+            s.FileScope.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1 );
             f.FillScope( s, table );
         }
         s.Add(table);             
@@ -231,11 +229,14 @@
 	    if( fname == null )
 	        return;
 	        
-	    LuaFunction fun = (LuaFunction)s.Lookup(fname.name, Line - 1, Position);
-	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
+	    ILuaName fun = s.Lookup(fname.name, Line - 1, Position);
+	    if( fun == null || fun.type != LuaType.Function || ((LuaFunction)fun).RetStats.Count != 1 )
 	        return;
 	    else {
-	        fun.RetStats.First.Value.FillScope( s, vl );     
+	        LuaFunction func = (LuaFunction)fun;
+	        s.RValueScope = func.Scope;
+	        func.RetStats.First.Value.FillScope( s, vl );  
+	        s.RValueScope = null;
 	    }       
 	}
 	public void FillScope( LuaScope s, namelist nl ){
@@ -246,11 +247,14 @@
 	    if( fname == null )
 	        return;
 	        
-	    LuaFunction fun = (LuaFunction)s.Lookup(fname.name, Line - 1, Position);
-	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
+	    ILuaName fun = s.Lookup(fname.name, Line - 1, Position);
+	    if( fun == null || fun.type != LuaType.Function || ((LuaFunction)fun).RetStats.Count != 1 )
 	        return;
 	    else {
-	        fun.RetStats.First.Value.FillScope( s, nl );     
+	        LuaFunction func = (LuaFunction)fun;
+	        s.RValueScope = func.Scope;
+	        func.RetStats.First.Value.FillScope( s, nl );  
+	        s.RValueScope = null;   
 	    }   	
 	}
 	public void FillScope( LuaScope s, NAME n_left ){
@@ -261,11 +265,14 @@
 	    if( fname == null )
 	        return;
 	        
-	    LuaFunction fun = (LuaFunction)s.Lookup(fname.name, Line - 1, Position);
-	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
+	    ILuaName fun = s.Lookup(fname.name, Line - 1, Position);
+	    if( fun == null || fun.type != LuaType.Function || ((LuaFunction)fun).RetStats.Count != 1 )
 	        return;
 	    else {
-	        fun.RetStats.First.Value.FillScope( s, n_left );     
+	        LuaFunction func = (LuaFunction)fun;
+	        s.RValueScope = func.Scope;
+	        func.RetStats.First.Value.FillScope( s, n_left );   
+	        s.RValueScope = null;  
 	    } 
 	}
     public void FillScope( LuaScope s, var v_left ){
@@ -273,11 +280,14 @@
 	    if( fname == null )
 	        return;
 	        
-	    LuaFunction fun = (LuaFunction)s.Lookup(fname.name, Line - 1, Position);
-	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
+	    ILuaName fun = s.Lookup(fname.name, Line - 1, Position);
+	    if( fun == null || fun.type != LuaType.Function || ((LuaFunction)fun).RetStats.Count != 1 )
 	        return;
 	    else {
-	        fun.RetStats.First.Value.FillScope( s, v_left );     
+	        LuaFunction func = (LuaFunction)fun; 
+	        s.RValueScope = func.Scope;
+	        func.RetStats.First.Value.FillScope( s, v_left );  
+	        s.RValueScope = null;   
 	    }          
     }
 	public ILuaName Resolve( LuaScope s ){	
@@ -291,11 +301,12 @@
 	    if( fname == null )
 	        return null;
 	        
-	    LuaFunction fun = (LuaFunction)s.Lookup(fname.name, Line - 1, Position);
-	    if( fun == null || fun.type != LuaType.Function || fun.RetStats.Count != 1 )
+	    ILuaName fun = s.Lookup(fname.name, Line - 1, Position);
+	    if( fun == null || fun.type != LuaType.Function || ((LuaFunction)fun).RetStats.Count != 1 )
 	        return null;
 	    else {
-	        return fun.RetStats.First.Value.Resolve( s );        
+	        LuaFunction func = (LuaFunction)fun;
+	        return func.RetStats.First.Value.Resolve( func.Scope );        
 	    }                         
 	}
 }
@@ -303,9 +314,76 @@
 
 ///////////////////////////// FUNCTION NAME ///////////////////////////////////
 %symbol funcname {
-	public NAME name;
-	public funcname( NAME a ){ name = a; }
-	public void FillScope( LuaScope scope ){
+	private NAME n1;
+	private NAME n2;
+	private funcname fn;
+	public funcname( NAME a ){ n1 = a; }
+	public funcname( NAME a, NAME b ){ n1 = a; n2 = b; }
+	public funcname( NAME a, funcname b ){ n2 = a; fn = b; }
+	public LuaFunction FillScope( LuaScope s ){
+	    if( n1 != null && n2 == null ){ // Global function declaration case
+	        LuaFunction f = new LuaFunction();
+	        f.name = n1.s;
+        	  
+	        // TODO: This isn't really correct. It works assuming we have just one file
+	        // but will need to revisit for support of intellisense over entire projects.
+	        if( s.GlobalScope().ShallowLookupFunction(n1.s) == null )
+	            s.GlobalScope().Add(f); 
+	            
+	        return f;
+	    }
+	    else if( fn != null && n2 != null ){ // function n1.n2...nn() end
+	        ILuaName t = s.Lookup( n2.s, n2.Line, n2.Position );
+	        if( t != null && t.type == LuaType.Table )
+	            return fn.FillScope( (LuaNamespace)t );  
+	        else
+	            return null;
+	    }
+	    else if( n1 != null && n2 != null ){ // function n1:n2() end 
+	        ILuaName t = s.Lookup( n1.s, n1.Line, n1.Position );
+	        if( t == null || t.type != LuaType.Table ){ // if we can't resolve, create the namespace on the fly
+	            t = new LuaTable( n1.s, n1.Line, n1.Position );
+	            s.Add( (LuaTable)t );
+	        }
+	        
+	        LuaFunction f = new LuaFunction();
+	        f.name = n2.s;
+        	    
+	        ((LuaTable)t).Add( f ); 
+	        return f;     
+	    }
+	    else
+	        return null;
+	}
+	public LuaFunction FillScope( LuaNamespace s ){
+	    if( n1 != null && n2 == null ){
+	        LuaFunction f = new LuaFunction();
+	        f.name = n1.s;    	  
+	        s.Add(f); 
+	        return f;
+	    }
+	    else if( fn != null && n2 != null ){ // function n1.n2...nn() end
+	        ILuaName t = s.Lookup( n2.s, n2.Line, n2.Position );
+	        if( t != null && t.type == LuaType.Table )
+	            return fn.FillScope( (LuaNamespace)t ); 
+	        else
+	            return null; 
+	    }
+	    else if( n1 != null && n2 != null ){ // function n1:n2() end 
+	        ILuaName t = s.Lookup( n1.s, n1.Line, n1.Position );
+	        if( t == null || t.type != LuaType.Table ){
+	            t = new LuaTable( n1.s, n1.Line, n1.Position );
+	            s.Add( (LuaTable)t );
+	        }
+	        
+	        LuaFunction f = new LuaFunction();
+	        f.name = n2.s;
+        	    
+	        ((LuaTable)t).Add( f );
+	        return f;      
+	    }
+	    else
+	        return null;
 	}
 }
 
@@ -547,19 +625,17 @@
         n.nl.FillScope( s );    
    }  
    public ILuaName Resolve( LuaScope s ){
-      if( l != null )
-      {
+      if( l != null ){
         LuaName name = new LuaName();
         name.name = l.s;
         name.pos = l.Position;
         name.line = l.Line - 1;
         return name;
       }
-      else
+      else if( p != null ){
+        return p.Resolve( s );
+      }
         return null;
-                
-                // TODO: We need to extend this to cover prefixexp productions 
-                // that reduce to LITERAL.
    } 
 }
                                                   
@@ -790,7 +866,7 @@
         ILuaName left = p.Resolve( s );
         ILuaName l = e.Resolve( s );
         
-        if( left == null || left.type != LuaType.Table )
+        if( left == null || left.type != LuaType.Table || l == null )
             return;
             
         BaseAssign( (LuaTable)left, rvalue, l );
@@ -875,17 +951,12 @@
    funcbody body;
    public FuncDecl( funcname a, funcbody b ){ fname = a; body = b; }
    public override void FillScope( LuaScope s ){ 
-      LuaFunction f = new LuaFunction();
-	  f.name = fname.name.s;
-	  f.line = body.Line - 1;
-	  f.pos  = body.Position;
-	  
-	  // TODO: This isn't really correct. It works assuming we have just one file
-	  // but will need to revisit for support of intellisense over entire projects.
-	  if( s.GlobalScope().ShallowLookupFunction(fname.name.s) == null )
-	    s.GlobalScope().Add(f);
-	    
-	  body.FillScope( s, f );    
+      LuaFunction f = fname.FillScope( s ); 
+      if( f != null ){
+         f.line = body.Line - 1;
+	     f.pos  = body.Position;  
+         body.FillScope( s, f ); 
+      }
    }
 }
 %node LocalFuncDecl : stat
@@ -1111,7 +1182,8 @@ exp			: NIL:a                                                        %exp( a )
 			| prefixexp:a                                                  %exp( a ) 
 			| tableconstructor:a                                           %exp( a )
 			| exp binop exp                                           
-			| unop exp;
+			| unop exp
+			| ELIPSE;
 				
 functioncall   : prefixexp:a arg:b            							   %functioncall( a, b )
 	   		   | prefixexp:a COLON NAME arg:b                              %functioncall( a, b );
@@ -1130,8 +1202,8 @@ var			: NAME:a                                                       %var( a )
 			| prefixexp:a LBRACK exp:b RBRACK                              %TableRef( a, b ) 
 			| prefixexp:a DOT NAME:b                                       %PackageRef( a, b );                                     
 
-funcname 	: NAME DOT funcname
-			| NAME COLON NAME
+funcname 	: NAME:a DOT funcname:b                                        %funcname( a, b )
+			| NAME:a COLON NAME:b                                          %funcname( a, b )
 			| NAME:s												       %funcname( s );		
 				
 funcbody	: LPAREN RPAREN:b block:a END:c								   %funcbody( a, c, b )

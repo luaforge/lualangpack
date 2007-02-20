@@ -25,6 +25,9 @@
 %right MULT PLUS MINUS MOD DIVIDE CONCAT END FUNCTION COMMA NAME NEQ LT GT LE AND GE EQ OR LPAREN POUND NOT
 %left EXP ASSIGN
 
+chunk       : var
+            | functioncall;
+
 var			: NAME 
 			| RBRACK exp LBRACK prefixexp
 			| NAME DOT prefixexp; 				

@@ -15,6 +15,9 @@ public class LuaNamespace
     public LuaNamespace() { }
     public LuaNamespace(LuaNamespace ns)
     {
+        if (ns == null)
+            return;
+
         foreach (LinkedList<LuaName> names in ns.m_names.Values)
         {
             foreach (LuaName name in names)
@@ -120,28 +123,44 @@ public class LuaNamespace
         ILuaName n2 = LookupName(name, line, pos);
         ILuaName n3 = LookupFunction(name, line, pos);
         List<ILuaName> l = new List<ILuaName>(3);
-
-        if (n1 == null)
-            n1 = new LuaName();
-        if (n2 == null)
-            n2 = new LuaName();
-        if (n3 == null)
-            n3 = new LuaName();
+        ILuaName obj = null;
 
         l.Add(n1);
         l.Add(n2);
         l.Add(n3);
 
-        ILuaName obj = new LuaName();
+        foreach (ILuaName n in l)
+        {
+            if (obj == null && n != null)
+                obj = n;
+            else if ((obj != null && n != null) && (n.line >= obj.line && n.pos > obj.pos))
+                obj = n;
+        }
+
+        return obj;
+    }
+
+    protected ILuaName noVLookup(string name, int line, int pos)
+    {
+        ILuaName n1 = LookupTable(name, line, pos);
+        ILuaName n2 = LookupName(name, line, pos);
+        ILuaName n3 = LookupFunction(name, line, pos);
+        List<ILuaName> l = new List<ILuaName>(3);
+        ILuaName obj = null;
+
+        l.Add(n1);
+        l.Add(n2);
+        l.Add(n3);
 
         foreach (ILuaName n in l)
-            if (n.line >= obj.line && n.pos > obj.pos)
+        {
+            if (obj == null && n != null)
                 obj = n;
+            else if ((obj != null && n != null) && (n.line >= obj.line && n.pos > obj.pos))
+                obj = n;
+        }
 
-        if (obj.line != -1)
-            return obj;
-        else
-            return null;
+        return obj;    
     }
 
     public LuaName ShallowLookupName(string name)
@@ -312,55 +331,19 @@ public class LuaName : ILuaName
     public LuaName() { }
     public LuaName(LuaName n)
     {
-        m_line = n.m_line;
-        m_name = n.m_name;
-        m_pos = n.m_pos;
-        m_type = n.m_type;
+        if (n != null)
+        {
+            m_line = n.m_line;
+            m_name = n.m_name;
+            m_pos = n.m_pos;
+            m_type = n.m_type;
+        }
     }
 
     private int m_line = -1;
     private int m_pos = -1;
     private LuaType m_type = LuaType.Name;
     private string m_name;
-}
-
-public class LuaTable : LuaNamespace, ILuaName
-{
-    #region LuaName Implementation
-    public string name
-    {
-        get { return m_name; }
-        set { m_name = value; }
-    }
-    public int line
-    {
-        get { return m_line; }
-        set { m_line = value; }
-    }
-    public int pos
-    {
-        get { return m_pos; }
-        set { m_pos = value; }
-    }
-    public LuaType type
-    {
-        get { return m_type; }
-    }
-    #endregion 
-
-    public LuaTable() { }
-    public LuaTable(LuaTable t) : base(t)
-    {
-        m_line = t.m_line;
-        m_name = t.m_name;
-        m_pos = t.m_pos;
-        m_type = t.m_type;
-    }
-
-    private int m_line = -1;
-    private int m_pos = -1;
-    private string m_name;
-    private LuaType m_type = LuaType.Table;
 }
 
 public class RetValSet : ILuaName
@@ -450,6 +433,9 @@ public class LuaFunction : ILuaName
         m_name = f.m_name;
         m_pos = f.m_pos;
         m_type = f.m_type;
+        m_scope = f.m_scope;
+        m_arguments = f.m_arguments;
+        m_retVals = f.m_retVals;
     }
 
     public void Add(LuaLangImpl.explist e)
@@ -466,14 +452,20 @@ public class LuaFunction : ILuaName
         get { return m_retVals; }
     }
 
+    public LuaScope Scope
+    {
+        get { return m_scope; }
+        set { m_scope = value; }
+    }
+
     private int m_line = -1;
     private int m_pos = -1;
     private string m_name;
+    private LuaScope m_scope;
     private LuaType m_type = LuaType.Function;
     private LinkedList<string> m_arguments = new LinkedList<string>();
     private LinkedList<RetValSet> m_retVals = new LinkedList<RetValSet>();
 }
-
 
 public class LuaScope : LuaNamespace
 {
@@ -483,14 +475,33 @@ public class LuaScope : LuaNamespace
     public int beginIndx;
     public int endIndx;
     public bool outline;
-    public LinkedList<LuaScope> nested = new LinkedList<LuaScope>();
+    public LuaScope m_root;
+    
     #endregion
     
     #region Private Data Members
-    private LuaScope m_root;
-    private LuaScope m_parent;
+    protected LuaScope m_parent;
+    private LuaScope m_rValueScope = null;
+    private static LuaScope m_fileScope = null;
+    private LinkedList<LuaScope> m_nested = new LinkedList<LuaScope>();
     private LinkedList<TextSpan> m_regions = new LinkedList<TextSpan>();
     #endregion
+
+    public LuaScope RValueScope
+    {
+        set { m_rValueScope = value; }
+    }
+
+    public LuaScope FileScope // accessor for parser
+    {
+        set { m_fileScope = value; }
+        get { return m_fileScope; }
+    }
+
+    public virtual LinkedList<LuaScope> nested 
+    {
+        get { return m_nested; }    
+    }
 
     public LuaScope(LuaScope parent)
     {
@@ -507,11 +518,35 @@ public class LuaScope : LuaNamespace
         beginLine = -1; endLine = -1; beginIndx = -1; endIndx = -1;
     }
 
+    public LuaScope() 
+    {
+  //      m_root = this;
+  //      m_parent = null;
+  //      beginLine = -1; endLine = -1; beginIndx = -1; endIndx = -1;
+    }
+
+    public LuaScope(LuaTable t) : base(t) { 
+    }
+
     // There's never a case where we want to look only at the current scope since Lua
     // is lexically scoped. We always want to look at all parent scopes as well until
     // we find the name or run out of parents.
     public override ILuaName Lookup(string name, int line, int pos)
     {
+        // hack alert. the ast ended up not being structured well for handling assignments
+        // where the rvalue is a function call. when the assignment is actually made, the 
+        // ast only has visibility to the scope, and all parent scope, of the lvalue. 
+        // however, if the rvalue is a function call the return value can't always be resolved
+        // since it may be in a child or orthogonal scope. the workaround is to set a reference
+        // to the rvalue scope in the lavalue 
+        if (m_rValueScope != null)
+        {
+            ILuaName ret = m_rValueScope.Lookup(name, line, pos);
+            if (ret != null)
+                return ret;
+        }
+        // end workaround
+
         ILuaName obj = base.Lookup(name, line, pos);
         if (obj != null)
             return obj;
@@ -529,7 +564,7 @@ public class LuaScope : LuaNamespace
         {
             retVal = this;
 
-            foreach (LuaScope scope in nested)
+            foreach (LuaScope scope in m_nested)
             {
                 retVal = scope.FindEnclosingScope(line);
                 if (retVal != this)
@@ -575,7 +610,7 @@ public class LuaScope : LuaNamespace
         foreach (TextSpan span in m_regions)
             sink.AddHiddenRegion(span);
 
-        foreach (LuaScope scope in nested)
+        foreach (LuaScope scope in m_nested)
             scope.AddRegions(sink);
     }
 
@@ -734,4 +769,69 @@ public class LuaScope : LuaNamespace
         f.name = "xpcall";
         Add(f);
     }
+}
+
+public class LuaTable : LuaScope, ILuaName
+{
+    #region LuaName Implementation
+    public string name
+    {
+        get { return m_name; }
+        set { m_name = value; }
+    }
+    public int line
+    {
+        get { return m_line; }
+        set { m_line = value; }
+    }
+    public int pos
+    {
+        get { return m_pos; }
+        set { m_pos = value; }
+    }
+    public LuaType type
+    {
+        get { return m_type; }
+    }
+    #endregion
+
+    public LuaTable(){ }
+    public LuaTable(LuaScope s)
+        : base(s.Parent())
+    {
+           
+    }
+    public LuaTable(string name, int line, int pos) : base(null)
+    {
+        m_line = line; m_pos = pos; m_name = name;
+    }
+    public LuaTable(LuaTable t)
+        : base(t)
+    {
+        m_line = t.m_line;
+        m_name = t.m_name;
+        m_pos = t.m_pos;
+        m_type = t.m_type;
+    }
+
+    public override LinkedList<LuaScope> nested
+    {
+        get { return m_parent.nested; }
+    }
+
+    public void SetEnclosingScope( LuaScope s )
+    {
+        m_root = s.m_root;
+        m_parent = s;
+    }
+
+    public override ILuaName Lookup(string name, int line, int pos)
+    {
+        return noVLookup(name, line, pos);
+    }
+
+    private int m_line = -1;
+    private int m_pos = -1;
+    private string m_name;
+    private LuaType m_type = LuaType.Table;
 }
