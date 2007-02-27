@@ -456,7 +456,7 @@ public class exp : SYMBOL{
 }
  else  if ( t != null ){ t . FillScope ( s , v );
 }
- else  if ( btrue || bfalse || number || nil ){ LuaName  rvalue = new  LuaName ();
+ else  if ( btrue || bfalse || number || nil || l != null ){ LuaName  rvalue = new  LuaName ();
  rvalue . name ="";
  rvalue . line = Line -1;
  rvalue . pos = Position ;
@@ -469,7 +469,7 @@ public class exp : SYMBOL{
 }
  else  if ( t != null ){ t . FillScope ( s , n );
 }
- else  if ( btrue || bfalse || number || nil ){ LuaName  name = new  LuaName ();
+ else  if ( btrue || bfalse || number || nil || l != null ){ LuaName  name = new  LuaName ();
  name . name = n . s ;
  name . pos = n . Position ;
  name . line = n . Line -1;
@@ -482,7 +482,7 @@ public class exp : SYMBOL{
 }
  else  if ( t != null ){ t . FillScope ( s , v . v );
 }
- else  if ( btrue || bfalse || number || nil ){ LuaName  rvalue = new  LuaName ();
+ else  if ( btrue || bfalse || number || nil || l != null ){ LuaName  rvalue = new  LuaName ();
  rvalue . name ="";
  rvalue . line = Line -1;
  rvalue . pos = Position ;
@@ -496,7 +496,7 @@ public class exp : SYMBOL{
 }
  else  if ( t != null ){ t . FillScope ( s , n . n );
 }
- else  if ( btrue || bfalse || number || nil ){ LuaName  name = new  LuaName ();
+ else  if ( btrue || bfalse || number || nil || l != null ){ LuaName  name = new  LuaName ();
  name . name = n . n . s ;
  name . pos = n . n . Position ;
  name . line = n . n . Line -1;
@@ -505,7 +505,7 @@ public class exp : SYMBOL{
  if ( n . nl != null && p == null ) n . nl . FillScope ( s );
 }
  public  ILuaName  Resolve ( LuaScope  s ){ if ( l != null ){ LuaName  name = new  LuaName ();
- name . name = l . s ;
+ name . name = l . s_nq ;
  name . pos = l . Position ;
  name . line = l . Line -1;
  return  name ;

@@ -555,22 +555,36 @@ public class LuaScope : LuaNamespace
         else
             return null;
     }
- 
-    public LuaScope FindEnclosingScope(int line)
+
+    private LuaScope FindEnclosingScopeAux(int line)
     {
-        LuaScope retVal = m_parent;
+        LuaScope retVal = null;
 
         if (line >= beginLine && line <= endLine) // We're in this scope, see if we're in a child scope
         {
             retVal = this;
+            LuaScope tmp;
 
             foreach (LuaScope scope in m_nested)
             {
-                retVal = scope.FindEnclosingScope(line);
-                if (retVal != this)
+                tmp = scope.FindEnclosingScopeAux(line);
+                if (tmp != null)
+                {
+                    retVal = tmp;
                     break;
+                }
             }
         }
+
+        return retVal;    
+    }
+ 
+    public LuaScope FindEnclosingScope(int line)
+    {
+        LuaScope retVal = FindEnclosingScopeAux(line);
+         
+        if( retVal == null )
+            retVal = m_root;
 
         return retVal;
     }

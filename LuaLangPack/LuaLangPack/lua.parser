@@ -556,7 +556,7 @@
       else if( t != null ){
          t.FillScope( s, v );
       }
-      else if( btrue || bfalse || number || nil ){
+      else if( btrue || bfalse || number || nil || l != null){
          LuaName rvalue = new LuaName();
          rvalue.name = "";
          rvalue.line = Line - 1;
@@ -574,7 +574,7 @@
       else if( t != null ){
          t.FillScope( s, n );
       }
-      else if( btrue || bfalse || number || nil ){
+      else if( btrue || bfalse || number || nil || l != null ){
          LuaName name = new LuaName();
          name.name = n.s;
          name.pos = n.Position;
@@ -592,7 +592,7 @@
       else if( t != null ){
          t.FillScope( s, v.v );
       }
-      else if( btrue || bfalse || number || nil ){
+      else if( btrue || bfalse || number || nil || l != null){
          LuaName rvalue = new LuaName();
          rvalue.name = "";
          rvalue.line = Line - 1;
@@ -613,7 +613,7 @@
       else if( t != null ){
          t.FillScope( s, n.n );
       }
-      else if( btrue || bfalse || number || nil ){
+      else if( btrue || bfalse || number || nil || l != null){
          LuaName name = new LuaName();
          name.name = n.n.s;
          name.pos = n.n.Position;
@@ -627,7 +627,7 @@
    public ILuaName Resolve( LuaScope s ){
       if( l != null ){
         LuaName name = new LuaName();
-        name.name = l.s;
+        name.name = l.s_nq;
         name.pos = l.Position;
         name.line = l.Line - 1;
         return name;

@@ -3,7 +3,11 @@
 %declare{ public string str; public int blocknest; }
 %token NAME { public string s; }
 %token LITERAL : NAME { 
-   public LITERAL( string a ){ s = a; }
+   public string s_nq;
+   public LITERAL( string a ){ 
+    s = a; 
+    s_nq = a.Substring(1, a.Length - 2); // store a version with trimmed quotes
+   }
 }
 %token NUMBER { public double n; }
 %token COMMENT;

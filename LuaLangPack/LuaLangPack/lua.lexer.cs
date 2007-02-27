@@ -9,7 +9,9 @@ public override int yynum { get { return 3; }}
 public NAME(Lexer yyl):base(yyl){}}
 //%+LITERAL+4
 public class LITERAL : NAME{
+ public  string  s_nq ;
  public  LITERAL (Lexer yyl, string  a ):base(((tokens)yyl)){ s = a ;
+ s_nq = a . Substring (1, a . Length -2);
 }
 
 public override string yyname { get { return "LITERAL"; }}
