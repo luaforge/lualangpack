@@ -167,7 +167,8 @@
     public void FillScope( LuaScope s, var v ){ // Global scope (unless var already declared local)
         LuaTable table = new LuaTable();    
         table.line = close.Line - 1;
-        table.pos  = close.Position;            
+        table.pos  = close.Position;
+        table.file = LuaScope.filename;            
         
         if( f != null ){  
             s.FileScope.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1);            
@@ -181,6 +182,7 @@
         table.name = n.s;
         table.line = close.Line - 1;
         table.pos  = close.Position;
+        table.file = LuaScope.filename;
         if( f != null ){
             s.FileScope.DeclareRegion( open.Line - 1, open.Position, close.Line - 1, close.Position - 1 );
             f.FillScope( s, table );
@@ -209,6 +211,7 @@
 	    name.name = n.s;
 	    name.line = n.Line - 1;
 	    name.pos  = n.Position; 
+	    name.file = LuaScope.filename;
 	    s.Add( name );
 	}
 }
@@ -324,6 +327,7 @@
 	    if( n1 != null && n2 == null ){ // Global function declaration case
 	        LuaFunction f = new LuaFunction();
 	        f.name = n1.s;
+	        f.file = LuaScope.filename;
         	  
 	        // TODO: This isn't really correct. It works assuming we have just one file
 	        // but will need to revisit for support of intellisense over entire projects.
@@ -343,12 +347,13 @@
 	        ILuaName t = s.Lookup( n1.s, n1.Line, n1.Position );
 	        if( t == null || t.type != LuaType.Table ){ // if we can't resolve, create the namespace on the fly
 	            t = new LuaTable( n1.s, n1.Line, n1.Position );
+	            t.file = LuaScope.filename;
 	            s.Add( (LuaTable)t );
 	        }
 	        
 	        LuaFunction f = new LuaFunction();
 	        f.name = n2.s;
-        	    
+        	f.file = LuaScope.filename;    
 	        ((LuaTable)t).Add( f ); 
 	        return f;     
 	    }
@@ -358,7 +363,8 @@
 	public LuaFunction FillScope( LuaNamespace s ){
 	    if( n1 != null && n2 == null ){
 	        LuaFunction f = new LuaFunction();
-	        f.name = n1.s;    	  
+	        f.name = n1.s;
+	        f.file = LuaScope.filename;  	  
 	        s.Add(f); 
 	        return f;
 	    }
@@ -373,12 +379,13 @@
 	        ILuaName t = s.Lookup( n1.s, n1.Line, n1.Position );
 	        if( t == null || t.type != LuaType.Table ){
 	            t = new LuaTable( n1.s, n1.Line, n1.Position );
+	            t.file = LuaScope.filename;
 	            s.Add( (LuaTable)t );
 	        }
 	        
 	        LuaFunction f = new LuaFunction();
 	        f.name = n2.s;
-        	    
+        	f.file = LuaScope.filename;    
 	        ((LuaTable)t).Add( f );
 	        return f;      
 	    }
@@ -499,7 +506,7 @@
     {
    	    LuaFunction fun = new LuaFunction();
 	    fun.name = "?anon?";
-   
+        fun.file = LuaScope.filename;
         f.FillScope( s, fun );
         v_left.Assign( s, fun );
     }
@@ -509,7 +516,7 @@
 	    fun.name = n_left.s;
 	    fun.line = n_left.Line - 1;
 	    fun.pos  = n_left.Position;     
-   
+        fun.file = LuaScope.filename;
         f.FillScope( s, fun );
         s.Add( fun );      
     }
@@ -561,6 +568,7 @@
          rvalue.name = "";
          rvalue.line = Line - 1;
          rvalue.pos = Position;
+         rvalue.file = LuaScope.filename;
          v.Assign( s, rvalue );  
       } 
    }    
@@ -579,6 +587,7 @@
          name.name = n.s;
          name.pos = n.Position;
          name.line = n.Line - 1;
+         name.file = LuaScope.filename;
          s.Add( name );
       } 
    }  
@@ -597,6 +606,7 @@
          rvalue.name = "";
          rvalue.line = Line - 1;
          rvalue.pos = Position;
+         rvalue.file = LuaScope.filename;
          v.v.Assign( s, rvalue );  
       }
       
@@ -618,6 +628,7 @@
          name.name = n.n.s;
          name.pos = n.n.Position;
          name.line = n.n.Line - 1;
+         name.file = LuaScope.filename;
          s.Add( name );
       } 
       
@@ -630,6 +641,7 @@
         name.name = l.s_nq;
         name.pos = l.Position;
         name.line = l.Line - 1;
+        name.file = LuaScope.filename;
         return name;
       }
       else if( p != null ){
@@ -694,6 +706,7 @@
             name.line = n.Line - 1;
             name.pos  = n.Position; 
             name.name = n.s;
+            name.file = LuaScope.filename;
             s.GlobalScope().Add( name ); 
         }           
     }
@@ -716,11 +729,12 @@
         return s.Lookup(n.s, n.Line - 1, n.Position);        
     }
     protected void BaseAssign( LuaNamespace s, ILuaName rvalue, ILuaName n_left ){
-        if( rvalue == null || rvalue.type == LuaType.Name ){
+        if( rvalue == null || rvalue.type == LuaType.Name ){ // == null for cases like 'foo = nil'
             LuaName name = new LuaName((LuaName)rvalue);
             name.line = n_left.line;
             name.pos  = n_left.pos; 
             name.name = n_left.name;
+            name.file = LuaScope.filename;
             s.Add( name );
         }
         else if( rvalue.type == LuaType.Table ){
@@ -728,6 +742,7 @@
             table.line = n_left.line;
             table.pos = n_left.pos;
             table.name = n_left.name;
+            table.file = LuaScope.filename;
             s.Add( table ); 
         }
         else if( rvalue.type == LuaType.Function ){
@@ -735,6 +750,7 @@
             fun.line = n_left.line;
             fun.pos = n_left.pos;
             fun.name = n_left.name;
+            fun.file = LuaScope.filename;
             s.Add( fun ); 
         }
     }
@@ -745,7 +761,8 @@
             LuaName name = new LuaName((LuaName)rvalue);
             name.line = lname.Line - 1;
             name.pos  = lname.Position; 
-            name.name = lname.s;
+            name.name = lname.s;           
+            name.file = LuaScope.filename;
             s.Add( name );
         }
         else if( rvalue.type == LuaType.Table ){
@@ -753,6 +770,7 @@
             table.line = lname.Line - 1;
             table.pos = lname.Position;
             table.name = lname.s;
+            table.file = LuaScope.filename;
             s.Add( table ); 
         }
         else if( rvalue.type == LuaType.Function ){
@@ -760,6 +778,7 @@
             fun.line = lname.Line - 1;
             fun.pos = lname.Position;
             fun.name = lname.s;
+            fun.file = LuaScope.filename;
             s.Add( fun ); 
         }
     }
@@ -968,7 +987,8 @@
 	   LuaFunction f = new LuaFunction();
 	   f.name = name.s;
 	   f.line = body.Line - 1;
-	   f.pos  = body.Position;      
+	   f.pos  = body.Position;  
+	   f.file = LuaScope.filename;    
 	   s.Add(f);
 	   
 	   body.FillScope( s, f );
@@ -1028,7 +1048,7 @@
     block b;
     public SIf( exp a , block i ){ e = a; b = i; }
     public override void FillScope( LuaScope s ){
-        e.FillScope( s );
+//        e.FillScope( s );
         b.FillScope( s );
     }
 }
@@ -1039,7 +1059,7 @@
     elseif eli;
     public SElseIf( exp a , block i, elseif j ){ e = a; b = i; eli = j; }
     public override void FillScope( LuaScope s ){
-        e.FillScope( s );
+//        e.FillScope( s );
         b.FillScope( s );
         eli.FillScope( s );
     }
@@ -1051,7 +1071,7 @@
     block b2;
     public SElse( exp a , block i, block j ){ e = a; b1 = i; b2 = j; }
     public override void FillScope( LuaScope s ){
-        e.FillScope( s );
+//        e.FillScope( s );
         b1.FillScope( s );
         b2.FillScope( s );
     }
@@ -1068,7 +1088,7 @@
     block b;
     public If( exp a , block i ){ e = a; b = i; }
     public override void FillScope( LuaScope s ){
-        e.FillScope( s );
+//        e.FillScope( s );
         b.FillScope( s );
     }
 }
@@ -1079,7 +1099,7 @@
     elseif eli;
     public ElseIf( exp a , block i, elseif j ){ e = a; b = i; eli = j; }
     public override void FillScope( LuaScope s ){
-        e.FillScope( s );
+//        e.FillScope( s );
         b.FillScope( s );
         eli.FillScope( s );
     }
@@ -1091,7 +1111,7 @@
     block b2;
     public Else( exp a , block i, block j ){ e = a; b1 = i; b2 = j; }
     public override void FillScope( LuaScope s ){
-        e.FillScope( s );
+//        e.FillScope( s );
         b1.FillScope( s );
         b2.FillScope( s );
     }

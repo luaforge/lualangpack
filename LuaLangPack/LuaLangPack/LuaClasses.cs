@@ -12,6 +12,8 @@ using Tools;
 
 public class LuaNamespace
 {
+    protected LuaScope m_root;
+
     public LuaNamespace() { }
     public LuaNamespace(LuaNamespace ns)
     {
@@ -73,9 +75,16 @@ public class LuaNamespace
         if (m_tables.ContainsKey(name))
         {
             foreach (LuaTable t in m_tables[name])
-                if ((t.line < line || (t.line == line && t.pos < pos)) &&
+            {
+                if (this == m_root)
+                {
+                    retVal = t;
+                    break;
+                }
+                else if ((t.line < line || (t.line == line && t.pos < pos)) &&
                     (t.line > retVal.line || (t.line == retVal.line && t.pos > retVal.pos)))
                     retVal = t;
+            }
 
             if (retVal.line != -1)
                 return retVal;
@@ -90,9 +99,16 @@ public class LuaNamespace
         if (m_names.ContainsKey(name))
         {
             foreach (LuaName n in m_names[name])
-                if ((n.line < line || (n.line == line && n.pos < pos)) &&
+            {
+                if (this == m_root)
+                {
+                    retVal = n;
+                    break;
+                }
+                else if ((n.line < line || (n.line == line && n.pos < pos)) &&
                     (n.line > retVal.line || (n.line == retVal.line && n.pos > retVal.pos)))
                     retVal = n;
+            }
 
             if (retVal.line != -1)
                 return retVal;
@@ -107,9 +123,16 @@ public class LuaNamespace
         if (m_functions.ContainsKey(name))
         {
             foreach (LuaFunction f in m_functions[name])
-                if ((f.line < line || (f.line == line && f.pos < pos)) &&
+            {
+                if (this == m_root)
+                {
+                    retVal = f;
+                    break;
+                }
+                else if ((f.line < line || (f.line == line && f.pos < pos)) &&
                     (f.line > retVal.line || (f.line == retVal.line && f.pos > retVal.pos)))
                     retVal = f;
+            }
 
             if (retVal.line != -1)
                 return retVal;
@@ -165,14 +188,14 @@ public class LuaNamespace
 
     public LuaName ShallowLookupName(string name)
     {
-        if (m_names.ContainsKey(name))
+        if (m_names.ContainsKey(name) && m_names[name].Count > 0)
             return m_names[name].First.Value;
         else
             return null;
     }
     public LuaFunction ShallowLookupFunction(string name)
     {
-        if (m_functions.ContainsKey(name))
+        if (m_functions.ContainsKey(name) && m_functions[name].Count > 0 )
             return m_functions[name].First.Value;
         else
             return null;
@@ -187,9 +210,18 @@ public class LuaNamespace
             LuaTable tmp = new LuaTable();
 
             foreach (LuaTable t in table)
-                if ((t.line < line || (t.line == line && t.pos < pos)) && 
-                    (t.line > tmp.line || (t.line == tmp.line && t.pos > tmp.pos)))
+            {
+                if (this == m_root)
+                {
                     tmp = t;
+                    break;
+                }
+                else if ((t.line < line || (t.line == line && t.pos < pos)) &&
+                    (t.line > tmp.line || (t.line == tmp.line && t.pos > tmp.pos)))
+                {
+                    tmp = t;
+                }
+            }
 
             if( tmp.line != -1 )
                 ret.AddLast(tmp);
@@ -206,9 +238,18 @@ public class LuaNamespace
             LuaName tmp = new LuaName();
 
             foreach (LuaName n in names)
-                if ((n.line < line || (n.line == line && n.pos < pos)) &&
-                    (n.line > tmp.line || (n.line == tmp.line && n.pos > tmp.pos)))
+            {
+                if (this == m_root)
+                {
                     tmp = n;
+                    break;
+                }
+                else if ((n.line < line || (n.line == line && n.pos < pos)) &&
+                    (n.line > tmp.line || (n.line == tmp.line && n.pos > tmp.pos)))
+                {
+                    tmp = n;
+                }
+            }
 
             if (tmp.line != -1)
                 ret.AddLast(tmp);
@@ -225,9 +266,18 @@ public class LuaNamespace
             LuaFunction tmp = new LuaFunction();
 
             foreach (LuaFunction f in functions)
-                if ((f.line < line || (f.line == line && f.pos < pos)) &&
-                    (f.line > tmp.line || (f.line == tmp.line && f.pos > tmp.pos)))
+            {
+                if (this == m_root)
+                {
                     tmp = f;
+                    break;
+                }
+                else if ((f.line < line || (f.line == line && f.pos < pos)) &&
+                    (f.line > tmp.line || (f.line == tmp.line && f.pos > tmp.pos)))
+                {
+                    tmp = f;
+                }
+            }
 
             if (tmp.line != -1)
                 ret.AddLast(tmp);
@@ -289,6 +339,10 @@ public interface ILuaName
     {
         get; set;
     }
+    string file
+    {
+        get; set;
+    }
     int line
     {
         get; set;
@@ -312,6 +366,11 @@ public class LuaName : ILuaName
         get { return m_name; }
         set { m_name = value; }
     }
+    public string file
+    {
+        get { return m_file; }
+        set { m_file = value; }
+    }
     public int line
     {
         get { return m_line; }
@@ -329,6 +388,12 @@ public class LuaName : ILuaName
     #endregion
 
     public LuaName() { }
+    public LuaName(string name, int line, int pos)
+    {
+        m_line = line;
+        m_name = name;
+        m_pos = pos;
+    }
     public LuaName(LuaName n)
     {
         if (n != null)
@@ -344,6 +409,7 @@ public class LuaName : ILuaName
     private int m_pos = -1;
     private LuaType m_type = LuaType.Name;
     private string m_name;
+    private string m_file;
 }
 
 public class RetValSet : ILuaName
@@ -353,6 +419,11 @@ public class RetValSet : ILuaName
     {
         get { return m_name; }
         set { m_name = value; }
+    }
+    public string file
+    {
+        get { return m_file; }
+        set { m_file = value; }
     }
     public int line
     {
@@ -398,6 +469,7 @@ public class RetValSet : ILuaName
     private int m_line = 0;
     private int m_pos = 0;
     private string m_name;
+    private string m_file;
     private LuaType m_type = LuaType.RetValSet;
     private LuaLangImpl.explist m_retVals;
 }
@@ -409,6 +481,11 @@ public class LuaFunction : ILuaName
     {
         get { return m_name; }
         set { m_name = value; }
+    }
+    public string file
+    {
+        get { return m_file; }
+        set { m_file = value; }
     }
     public int line
     {
@@ -427,6 +504,12 @@ public class LuaFunction : ILuaName
     #endregion
 
     public LuaFunction() { }
+    public LuaFunction( string name, int line, int pos ) 
+    {
+        m_line = line;
+        m_name = name;
+        m_pos = pos;
+    }
     public LuaFunction(LuaFunction f)
     {
         m_line = f.m_line;
@@ -461,6 +544,7 @@ public class LuaFunction : ILuaName
     private int m_line = -1;
     private int m_pos = -1;
     private string m_name;
+    private string m_file;
     private LuaScope m_scope;
     private LuaType m_type = LuaType.Function;
     private LinkedList<string> m_arguments = new LinkedList<string>();
@@ -475,8 +559,7 @@ public class LuaScope : LuaNamespace
     public int beginIndx;
     public int endIndx;
     public bool outline;
-    public LuaScope m_root;
-    
+    public static string filename;  
     #endregion
     
     #region Private Data Members
@@ -630,157 +713,239 @@ public class LuaScope : LuaNamespace
 
     private void InitStdLibGlobals()
     {
-        LuaTable t = new LuaTable();
-        t.name = "io";
-        LuaFunction n = new LuaFunction();
-        n.name = "close";
+        LuaName name = null;
+        LuaTable t = new LuaTable("io", 0, 0);
+        LuaFunction n = new LuaFunction("close", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "flush";
+        n = new LuaFunction("flush", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "input";
+        n = new LuaFunction("input", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "lines";
+        n = new LuaFunction("lines", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "open";
+        n = new LuaFunction("open", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "output";
+        n = new LuaFunction("output", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "read";
+        n = new LuaFunction("read", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "tmpfile";
+        n = new LuaFunction("tmpfile", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "type";
+        n = new LuaFunction("type", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "write";
+        n = new LuaFunction("write", 0, 0);
+        t.Add(n);
+        name = new LuaName("stdin", 0, 0);
+        t.Add(name);
+        name = new LuaName("stdout", 0, 0);
+        t.Add(name);
+        name = new LuaName("stderr", 0, 0);
+        t.Add(name);
+        Add(t);
+
+        t = new LuaTable("string", 0, 0);
+        n = new LuaFunction("byte", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("char", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("dump", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("find", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("format", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("gfind", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("gsub", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("len", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("lower", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("rep", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("sub", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("upper", 0, 0);
         t.Add(n);
         Add(t);
 
-        t = new LuaTable();
-        t.name = "string";
-        n = new LuaFunction();
-        n.name = "byte";
+        t = new LuaTable("coroutine", 0, 0);
+        n = new LuaFunction("create", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "char";
+        n = new LuaFunction("resume", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "dump";
+        n = new LuaFunction("status", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "find";
+        n = new LuaFunction("wrap", 0, 0);
         t.Add(n);
-        n = new LuaFunction();
-        n.name = "format";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "gfind";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "gsub";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "len";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "lower";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "rep";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "sub";
-        t.Add(n);
-        n = new LuaFunction();
-        n.name = "upper";
+        n = new LuaFunction("yield", 0, 0);
         t.Add(n);
         Add(t);
 
-        LuaFunction f = new LuaFunction();
-        f.name = "assert";
+        t = new LuaTable("table", 0, 0);
+        n = new LuaFunction("concat", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("foreach", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("foreachi", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("getn", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("sort", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("insert", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("remove", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("setn", 0, 0);
+        t.Add(n);
+        Add(t);
+
+        t = new LuaTable("math", 0, 0);
+        n = new LuaFunction("abs", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("acos", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("asin", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("atan", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("atan2", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("ceil", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("cos", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("deg", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("exp", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("floor", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("log", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("log10", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("max", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("min", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("mod", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("pow", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("rad", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("sin", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("sqrt", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("tan", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("frexp", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("ldexp", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("random", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("randomseed", 0, 0);
+        t.Add(n);
+        name = new LuaName("pi", 0, 0);
+        t.Add(name);
+        Add(t);
+
+        t = new LuaTable("os", 0, 0);
+        n = new LuaFunction("date", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("difftime", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("execute", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("exit", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("getenv", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("remove", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("rename", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("time", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("tmpname", 0, 0);
+        t.Add(n);
+        Add(t);
+
+        t = new LuaTable("debug", 0, 0);
+        n = new LuaFunction("debug", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("gethook", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("getinfo", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("getlocal", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("getupvalue", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("setlocal", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("sethook", 0, 0);
+        t.Add(n);
+        n = new LuaFunction("traceback", 0, 0);
+        t.Add(n);
+        Add(t);
+
+        LuaFunction f = new LuaFunction("assert", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "collectgarbage";
+        f = new LuaFunction("collectgarbage", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "dofile";
+        f = new LuaFunction("dofile", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "error";
+        f = new LuaFunction("error", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "getfenv";
+        f = new LuaFunction("getfenv", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "getmetatable";
+        f = new LuaFunction("getmetatable", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "gcinfo";
+        f = new LuaFunction("gcinfo", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "ipairs";
+        f = new LuaFunction("ipairs", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "loadfile";
+        f = new LuaFunction("loadfile", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "loadlib";
+        f = new LuaFunction("loadlib", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "loadstring";
+        f = new LuaFunction("loadstring", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "next";
+        f = new LuaFunction("next", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "pairs";
+        f = new LuaFunction("pairs", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "pcall";
+        f = new LuaFunction("pcall", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "print";
+        f = new LuaFunction("print", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "rawequal";
+        f = new LuaFunction("rawequal", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "rawget";
+        f = new LuaFunction("rawget", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "rawset";
+        f = new LuaFunction("rawset", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "require";
+        f = new LuaFunction("require", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "setfenv";
+        f = new LuaFunction("setfenv", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "setmetatable";
+        f = new LuaFunction("setmetatable", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "tonumber";
+        f = new LuaFunction("tonumber", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "tostring";
+        f = new LuaFunction("tostring", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "type";
+        f = new LuaFunction("type", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "unpack";
+        f = new LuaFunction("unpack", 0, 0);
         Add(f);
-        f = new LuaFunction();
-        f.name = "xpcall";
+        f = new LuaFunction("xpcall", 0, 0);
         Add(f);
     }
 }
@@ -792,6 +957,11 @@ public class LuaTable : LuaScope, ILuaName
     {
         get { return m_name; }
         set { m_name = value; }
+    }
+    public string file
+    {
+        get { return m_file; }
+        set { m_file = value; }
     }
     public int line
     {
@@ -835,7 +1005,7 @@ public class LuaTable : LuaScope, ILuaName
 
     public void SetEnclosingScope( LuaScope s )
     {
-        m_root = s.m_root;
+        m_root = s.GlobalScope();
         m_parent = s;
     }
 
@@ -847,5 +1017,6 @@ public class LuaTable : LuaScope, ILuaName
     private int m_line = -1;
     private int m_pos = -1;
     private string m_name;
+    private string m_file;
     private LuaType m_type = LuaType.Table;
 }

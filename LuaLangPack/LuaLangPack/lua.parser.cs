@@ -143,6 +143,7 @@ public class tableconstructor : SYMBOL{
  public  void  FillScope ( LuaScope  s , var  v ){ LuaTable  table = new  LuaTable ();
  table . line = close . Line -1;
  table . pos = close . Position ;
+ table . file = LuaScope . filename ;
  if ( f != null ){ s . FileScope . DeclareRegion ( open . Line -1, open . Position , close . Line -1, close . Position -1);
  f . FillScope ( s , table );
 }
@@ -152,6 +153,7 @@ public class tableconstructor : SYMBOL{
  table . name = n . s ;
  table . line = close . Line -1;
  table . pos = close . Position ;
+ table . file = LuaScope . filename ;
  if ( f != null ){ s . FileScope . DeclareRegion ( open . Line -1, open . Position , close . Line -1, close . Position -1);
  f . FillScope ( s , table );
 }
@@ -176,6 +178,7 @@ public class namelist : SYMBOL{
  name . name = n . s ;
  name . line = n . Line -1;
  name . pos = n . Position ;
+ name . file = LuaScope . filename ;
  s . Add ( name );
 }
 
@@ -257,6 +260,7 @@ public class funcname : SYMBOL{
 }
  public  LuaFunction  FillScope ( LuaScope  s ){ if ( n1 != null && n2 == null ){ LuaFunction  f = new  LuaFunction ();
  f . name = n1 . s ;
+ f . file = LuaScope . filename ;
  if ( s . GlobalScope (). ShallowLookupFunction ( n1 . s )== null ) s . GlobalScope (). Add ( f );
  return  f ;
 }
@@ -266,10 +270,12 @@ public class funcname : SYMBOL{
 }
  else  if ( n1 != null && n2 != null ){ ILuaName  t = s . Lookup ( n1 . s , n1 . Line , n1 . Position );
  if ( t == null || t . type != LuaType . Table ){ t = new  LuaTable ( n1 . s , n1 . Line , n1 . Position );
+ t . file = LuaScope . filename ;
  s . Add (( LuaTable ) t );
 }
  LuaFunction  f = new  LuaFunction ();
  f . name = n2 . s ;
+ f . file = LuaScope . filename ;
 (( LuaTable ) t ). Add ( f );
  return  f ;
 }
@@ -277,6 +283,7 @@ public class funcname : SYMBOL{
 }
  public  LuaFunction  FillScope ( LuaNamespace  s ){ if ( n1 != null && n2 == null ){ LuaFunction  f = new  LuaFunction ();
  f . name = n1 . s ;
+ f . file = LuaScope . filename ;
  s . Add ( f );
  return  f ;
 }
@@ -286,10 +293,12 @@ public class funcname : SYMBOL{
 }
  else  if ( n1 != null && n2 != null ){ ILuaName  t = s . Lookup ( n1 . s , n1 . Line , n1 . Position );
  if ( t == null || t . type != LuaType . Table ){ t = new  LuaTable ( n1 . s , n1 . Line , n1 . Position );
+ t . file = LuaScope . filename ;
  s . Add (( LuaTable ) t );
 }
  LuaFunction  f = new  LuaFunction ();
  f . name = n2 . s ;
+ f . file = LuaScope . filename ;
 (( LuaTable ) t ). Add ( f );
  return  f ;
 }
@@ -403,6 +412,7 @@ public class function : SYMBOL{
 }
  public  void  FillScope ( LuaScope  s , var  v_left ){ LuaFunction  fun = new  LuaFunction ();
  fun . name ="?anon?";
+ fun . file = LuaScope . filename ;
  f . FillScope ( s , fun );
  v_left . Assign ( s , fun );
 }
@@ -410,6 +420,7 @@ public class function : SYMBOL{
  fun . name = n_left . s ;
  fun . line = n_left . Line -1;
  fun . pos = n_left . Position ;
+ fun . file = LuaScope . filename ;
  f . FillScope ( s , fun );
  s . Add ( fun );
 }
@@ -460,6 +471,7 @@ public class exp : SYMBOL{
  rvalue . name ="";
  rvalue . line = Line -1;
  rvalue . pos = Position ;
+ rvalue . file = LuaScope . filename ;
  v . Assign ( s , rvalue );
 }
 }
@@ -473,6 +485,7 @@ public class exp : SYMBOL{
  name . name = n . s ;
  name . pos = n . Position ;
  name . line = n . Line -1;
+ name . file = LuaScope . filename ;
  s . Add ( name );
 }
 }
@@ -486,6 +499,7 @@ public class exp : SYMBOL{
  rvalue . name ="";
  rvalue . line = Line -1;
  rvalue . pos = Position ;
+ rvalue . file = LuaScope . filename ;
  v . v . Assign ( s , rvalue );
 }
  if ( v . vl != null && p == null ) v . vl . FillScope ( s );
@@ -500,6 +514,7 @@ public class exp : SYMBOL{
  name . name = n . n . s ;
  name . pos = n . n . Position ;
  name . line = n . n . Line -1;
+ name . file = LuaScope . filename ;
  s . Add ( name );
 }
  if ( n . nl != null && p == null ) n . nl . FillScope ( s );
@@ -508,6 +523,7 @@ public class exp : SYMBOL{
  name . name = l . s_nq ;
  name . pos = l . Position ;
  name . line = l . Line -1;
+ name . file = LuaScope . filename ;
  return  name ;
 }
  else  if ( p != null ){ return  p . Resolve ( s );
@@ -562,6 +578,7 @@ public class var : SYMBOL{
  name . line = n . Line -1;
  name . pos = n . Position ;
  name . name = n . s ;
+ name . file = LuaScope . filename ;
  s . GlobalScope (). Add ( name );
 }
 }
@@ -582,18 +599,21 @@ public class var : SYMBOL{
  name . line = n_left . line ;
  name . pos = n_left . pos ;
  name . name = n_left . name ;
+ name . file = LuaScope . filename ;
  s . Add ( name );
 }
  else  if ( rvalue . type == LuaType . Table ){ LuaTable  table = new  LuaTable (( LuaTable ) rvalue );
  table . line = n_left . line ;
  table . pos = n_left . pos ;
  table . name = n_left . name ;
+ table . file = LuaScope . filename ;
  s . Add ( table );
 }
  else  if ( rvalue . type == LuaType . Function ){ LuaFunction  fun = new  LuaFunction (( LuaFunction ) rvalue );
  fun . line = n_left . line ;
  fun . pos = n_left . pos ;
  fun . name = n_left . name ;
+ fun . file = LuaScope . filename ;
  s . Add ( fun );
 }
 }
@@ -602,18 +622,21 @@ public class var : SYMBOL{
  name . line = lname . Line -1;
  name . pos = lname . Position ;
  name . name = lname . s ;
+ name . file = LuaScope . filename ;
  s . Add ( name );
 }
  else  if ( rvalue . type == LuaType . Table ){ LuaTable  table = new  LuaTable (( LuaTable ) rvalue );
  table . line = lname . Line -1;
  table . pos = lname . Position ;
  table . name = lname . s ;
+ table . file = LuaScope . filename ;
  s . Add ( table );
 }
  else  if ( rvalue . type == LuaType . Function ){ LuaFunction  fun = new  LuaFunction (( LuaFunction ) rvalue );
  fun . line = lname . Line -1;
  fun . pos = lname . Position ;
  fun . name = lname . s ;
+ fun . file = LuaScope . filename ;
  s . Add ( fun );
 }
 }
@@ -812,6 +835,7 @@ public class LocalFuncDecl : stat{
  f . name = name . s ;
  f . line = body . Line -1;
  f . pos = body . Position ;
+ f . file = LuaScope . filename ;
  s . Add ( f );
  body . FillScope ( s , f );
 }
@@ -897,8 +921,7 @@ public class SIf : stat{
  public  SIf (Parser yyp, exp  a , block  i ):base(((syntax)yyp)){ e = a ;
  b = i ;
 }
- public  override  void  FillScope ( LuaScope  s ){ e . FillScope ( s );
- b . FillScope ( s );
+ public  override  void  FillScope ( LuaScope  s ){ b . FillScope ( s );
 }
 
 public override string yyname { get { return "SIf"; }}
@@ -913,8 +936,7 @@ public class SElseIf : stat{
  b = i ;
  eli = j ;
 }
- public  override  void  FillScope ( LuaScope  s ){ e . FillScope ( s );
- b . FillScope ( s );
+ public  override  void  FillScope ( LuaScope  s ){ b . FillScope ( s );
  eli . FillScope ( s );
 }
 
@@ -930,8 +952,7 @@ public class SElse : stat{
  b1 = i ;
  b2 = j ;
 }
- public  override  void  FillScope ( LuaScope  s ){ e . FillScope ( s );
- b1 . FillScope ( s );
+ public  override  void  FillScope ( LuaScope  s ){ b1 . FillScope ( s );
  b2 . FillScope ( s );
 }
 
@@ -953,8 +974,7 @@ public class If : elseif{
  public  If (Parser yyp, exp  a , block  i ):base(((syntax)yyp)){ e = a ;
  b = i ;
 }
- public  override  void  FillScope ( LuaScope  s ){ e . FillScope ( s );
- b . FillScope ( s );
+ public  override  void  FillScope ( LuaScope  s ){ b . FillScope ( s );
 }
 
 public override string yyname { get { return "If"; }}
@@ -969,8 +989,7 @@ public class ElseIf : elseif{
  b = i ;
  eli = j ;
 }
- public  override  void  FillScope ( LuaScope  s ){ e . FillScope ( s );
- b . FillScope ( s );
+ public  override  void  FillScope ( LuaScope  s ){ b . FillScope ( s );
  eli . FillScope ( s );
 }
 
@@ -986,8 +1005,7 @@ public class Else : elseif{
  b1 = i ;
  b2 = j ;
 }
- public  override  void  FillScope ( LuaScope  s ){ e . FillScope ( s );
- b1 . FillScope ( s );
+ public  override  void  FillScope ( LuaScope  s ){ b1 . FillScope ( s );
  b2 . FillScope ( s );
 }
 

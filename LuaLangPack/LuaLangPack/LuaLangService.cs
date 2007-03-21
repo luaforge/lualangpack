@@ -21,7 +21,6 @@ namespace Vsip.LuaLangPack
         private const int NAMESPACE = 90;
         private LuaScanner m_scanner;
         private LuaAuthScope m_authScope = new LuaAuthScope();
-        private LuaSource m_source;
         private LuaScope m_globalScope = new LuaScope((LuaScope)null);
         private Hashtable m_fileScopes = new Hashtable();
 
@@ -36,8 +35,7 @@ namespace Vsip.LuaLangPack
 
         public override Source CreateSource(IVsTextLines buffer)
         {
-            m_source = new LuaSource(this, buffer, GetColorizer(buffer));
-            return (m_source);
+            return (new LuaSource(this, buffer, GetColorizer(buffer)));
         }
 
         public override LanguagePreferences GetLanguagePreferences()
@@ -84,8 +82,9 @@ namespace Vsip.LuaLangPack
                 LuaScope enclosing = fileScope.FindEnclosingScope(req.Line);
                 if (enclosing == null)
                     enclosing = m_globalScope;
-                    
-                string line = m_source.GetLine(req.Line);
+                   
+                string line;
+                req.View.GetTextStream(req.Line, 0, req.Line, int.MaxValue, out line); 
                 int indx = req.TokenInfo.StartIndex;
 
                 if (line[indx] == '.') // Table dereference, resolve lvalue
@@ -101,7 +100,7 @@ namespace Vsip.LuaLangPack
                     else if (ast.yyname == "error")
                         var = line.Substring(indx - ast.Position, ast.Position);
                     else
-                        var = line.Substring(indx - ast.yylx.yypos, ast.yylx.yypos);
+                        var = line.Substring(indx - ast.yylx.yypos - 1, ast.yylx.yypos + 1);
 
                     // Forward parse var for resolution to value
                     p = new LuaVarParser.syntax();
@@ -159,9 +158,52 @@ namespace Vsip.LuaLangPack
             // Handle Full File Parse /////////////////////////////////////////
             else if (req.Reason == ParseReason.Check)
             {
+                // cleanup stale names from global space
+                foreach (LinkedList<LuaName> names in m_globalScope.names.Values)
+                {
+                    LinkedList<LuaName> buf = new LinkedList<LuaName>();
+
+                    foreach (LuaName name in names)
+                        if (name.file == req.FileName)
+                            buf.AddLast(name);
+
+                    foreach (LuaName name in buf)
+                        m_globalScope.names[name.name].Remove(name);
+
+                    buf.Clear();
+                }
+                foreach (LinkedList<LuaTable> tables in m_globalScope.tables.Values)
+                {
+                    LinkedList<LuaTable> buf = new LinkedList<LuaTable>();
+
+                    foreach (LuaTable table in tables)
+                        if (table.file == req.FileName)
+                            buf.AddLast(table);
+
+                    foreach (LuaTable table in buf)
+                        m_globalScope.tables[table.name].Remove(table);
+
+                    buf.Clear();
+                }
+                foreach (LinkedList<LuaFunction> funs in m_globalScope.functions.Values)
+                {
+                    LinkedList<LuaFunction> buf = new LinkedList<LuaFunction>();
+
+                    foreach (LuaFunction fun in funs)
+                        if (fun.file == req.FileName)
+                            buf.AddLast(fun);
+
+                    foreach (LuaFunction fun in buf)
+                        m_globalScope.functions[fun.name].Remove(fun);
+
+                    buf.Clear();
+                }
+
+                // Create filescope object and fill it with info from ast
                 LuaScope fileScope = new LuaScope( m_globalScope );
                 fileScope.beginLine = 0;
                 fileScope.endLine = Int32.MaxValue;
+                LuaScope.filename = req.FileName;
                 Parser p = new LuaLangImpl.syntax();
                 SYMBOL ast;
                 ast = p.Parse(req.Text);
@@ -178,7 +220,7 @@ namespace Vsip.LuaLangPack
                             fileScope.FileScope = fileScope;
                             node.FillScope(fileScope);
                         }
-                        catch (NullReferenceException nr)
+                       catch (NullReferenceException nr)
                         {
                          
                         }
