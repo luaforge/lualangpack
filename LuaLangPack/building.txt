@@ -1,15 +1,17 @@
 Building
 ---------------------
--Install Visual Studio 8 SDK from MS. This version of the source requires the Apr. 2006 RTM version.
+-Install Visual Studio 8 SDK from MS. The latest source is built against version 2006.09.
 
 -Substitute the location of your SDK installation, including version dir, to your p: drive. 
-	Example, >subst p: "D:\Program Files\Visual Studio 2005 SDK\2006.04"
+	Example, >subst p: "D:\Program Files\Visual Studio 2005 SDK\2006.09"
 
 -Open LuaLangPack.sln and rebuild all
 
 **** Note, the MS load key is removed from this source distribution. Therefore, the binaries generated will
  only work on machines with the VS SDK. If you want to distribute a derivitive work that loads without the
  SDK, then you must obtain your own load key from the MS VSIP program. ****
+
+-(For release build) Add your load key as resource ID 110. 
 
 
 Installing

@@ -1,3 +1,41 @@
+Version 0.6
+---------------------------------------
+-Added dynamic intellisense support
+   -Features
+      -Supports member select popup showing all names within lexical scope (see limitations).
+
+      -Supports member selection on tables via DOT operator.
+
+      -Lua 5.0 library functions are hardcoded.
+	
+   -Limitations
+      -Functions with more than one return statement may not display intellisense
+       information correctly when return values are referenced in a calling scope.
+       Multiple return values, in one return statement, are supported.
+
+      -Assignments within conditionals will not resolve properly. For example,
+	
+	if x then foo = {n = "n", m = "m"} else foo = {n = "n"} end    
+	foo.
+
+	result: either no member popup or one from a previous assignment to foo.
+
+      -Locals declared as part of a 'for' statement will not show in the member popup
+       within the 'for' block. There is simply no code is the AST to handle this case yet.
+ 
+      -No function argument tooltip implemented yet
+
+      -Any sort of trickery via metatables is not considered. 
+
+      -Probably much more. This was quite the project, which I greatly underestimated the 
+       scope of, and I'm sure I missed plenty. Stay sharp and use the intellisense as a 
+       rough guide, not a verification tool.
+
+
+-Added auto-outlining support on table declarations. 
+
+
+
 Version 0.5a (bugfix release)
 ---------------------------------------
 -Added support for lexing/colorizing of block comments.

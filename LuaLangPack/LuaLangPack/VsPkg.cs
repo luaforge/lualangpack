@@ -42,7 +42,7 @@ namespace Vsip.LuaLangPack
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [DefaultRegistryRoot("Software\\Microsoft\\VisualStudio\\8.0Exp")]
     [InstalledProductRegistration(true, "Lua Language Integration Pack", "Provides Lua 5.0 language integration with Visual Studio", "0.3", IconResourceID = 400)]
-    [ProvideLoadKey("Standard", "0.3", "Lua Language Integration Pack", "Real Networks Inc.", 110)]
+    [ProvideLoadKey("Standard", "0.3", "Lua Language Integration Pack", "trystan.org", 110)]
     [ProvideProjectFactory(typeof(LuaProjectFactory), "Lua Project", "LuaProject Project Files (*.luaproj);*.luaproj", "luaproj", "luaproj", "..\\Templates\\Projects")]
     [ProvideProjectItem(typeof(LuaProjectFactory), "Lua Items", "..\\Templates\\ProjectItems", 500)]
     [ProvideServiceAttribute(typeof(LuaLangService), ServiceName = "VS 2005 Lua Language Service")]
