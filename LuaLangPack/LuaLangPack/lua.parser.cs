@@ -200,7 +200,6 @@ public class functioncall : SYMBOL{
  else { LuaFunction  func =( LuaFunction ) fun ;
  s . RValueScope = func . Scope ;
  func . RetStats . First . Value . FillScope ( s , vl );
- s . RValueScope = null ;
 }
 }
  public  void  FillScope ( LuaScope  s , namelist  nl ){ ILuaName  fname = p . Resolve ( s );
@@ -210,7 +209,6 @@ public class functioncall : SYMBOL{
  else { LuaFunction  func =( LuaFunction ) fun ;
  s . RValueScope = func . Scope ;
  func . RetStats . First . Value . FillScope ( s , nl );
- s . RValueScope = null ;
 }
 }
  public  void  FillScope ( LuaScope  s , NAME  n_left ){ ILuaName  fname = p . Resolve ( s );
@@ -220,7 +218,6 @@ public class functioncall : SYMBOL{
  else { LuaFunction  func =( LuaFunction ) fun ;
  s . RValueScope = func . Scope ;
  func . RetStats . First . Value . FillScope ( s , n_left );
- s . RValueScope = null ;
 }
 }
  public  void  FillScope ( LuaScope  s , var  v_left ){ ILuaName  fname = p . Resolve ( s );
@@ -230,7 +227,6 @@ public class functioncall : SYMBOL{
  else { LuaFunction  func =( LuaFunction ) fun ;
  s . RValueScope = func . Scope ;
  func . RetStats . First . Value . FillScope ( s , v_left );
- s . RValueScope = null ;
 }
 }
  public  ILuaName  Resolve ( LuaScope  s ){ ILuaName  fname = p . Resolve ( s );
@@ -557,10 +553,10 @@ public class explist : SYMBOL{
  else { e . FillScope ( s , v );
 }
 }
- public  void  FillScope ( LuaScope  s , namelist  n ){ if ( l != null ){ e . FillScope ( s , n . n );
- l . FillScope ( s , n . nl );
+ public  void  FillScope ( LuaScope  s , namelist  nl ){ if ( l != null ){ e . FillScope ( s , nl . n );
+ if ( nl . nl != null ) l . FillScope ( s , nl . nl );
 }
- else { e . FillScope ( s , n );
+ else { e . FillScope ( s , nl );
 }
 }
  public  ILuaName  Resolve ( LuaScope  s ){ return  e . Resolve ( s );
@@ -691,7 +687,7 @@ public class TableRef : var{
 }
  public  override  void  FillScope ( LuaScope  s , var  v_left ){ ILuaName  right = p . Resolve ( s );
  ILuaName  l = e . Resolve ( s );
- if ( right == null || right . type != LuaType . Table ) return ;
+ if ( right == null || right . type != LuaType . Table || l == null ) return ;
  LuaTable  t =( LuaTable ) right ;
  ILuaName  rvalue = t . Lookup ( l . name , l . line , l . pos );
  v_left . Assign ( s , rvalue );

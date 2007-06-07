@@ -127,7 +127,7 @@
     <value>Lua</value>
   </data>
   <data name="110" xml:space="preserve">
-    <value>NOT_IN_SOURCE_DISTRO</value>
+    <value>CONTACT MS FOR LOAD KEY</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="400" type="System.Resources.ResXFileRef, System.Windows.Forms">

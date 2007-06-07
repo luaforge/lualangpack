@@ -239,7 +239,7 @@
 	        LuaFunction func = (LuaFunction)fun;
 	        s.RValueScope = func.Scope;
 	        func.RetStats.First.Value.FillScope( s, vl );  
-	        s.RValueScope = null;
+//	        s.RValueScope = null;
 	    }       
 	}
 	public void FillScope( LuaScope s, namelist nl ){
@@ -257,7 +257,7 @@
 	        LuaFunction func = (LuaFunction)fun;
 	        s.RValueScope = func.Scope;
 	        func.RetStats.First.Value.FillScope( s, nl );  
-	        s.RValueScope = null;   
+//	        s.RValueScope = null;   
 	    }   	
 	}
 	public void FillScope( LuaScope s, NAME n_left ){
@@ -275,7 +275,7 @@
 	        LuaFunction func = (LuaFunction)fun;
 	        s.RValueScope = func.Scope;
 	        func.RetStats.First.Value.FillScope( s, n_left );   
-	        s.RValueScope = null;  
+//	        s.RValueScope = null;  
 	    } 
 	}
     public void FillScope( LuaScope s, var v_left ){
@@ -290,7 +290,7 @@
 	        LuaFunction func = (LuaFunction)fun; 
 	        s.RValueScope = func.Scope;
 	        func.RetStats.First.Value.FillScope( s, v_left );  
-	        s.RValueScope = null;   
+//	        s.RValueScope = null;   
 	    }          
     }
 	public ILuaName Resolve( LuaScope s ){	
@@ -681,13 +681,14 @@
 	        e.FillScope( s, v ); // Handle multiple retvals if last expression is a functioncall
 	    }       
 	}
-	public void FillScope( LuaScope s, namelist n ){ // This path only on local name initialization    
+	public void FillScope( LuaScope s, namelist nl ){ // This path only on local name initialization    
 	    if( l != null ){
-	        e.FillScope( s, n.n ); 
-	        l.FillScope( s, n.nl ); 
+	        e.FillScope( s, nl.n ); 
+	        if( nl.nl != null )
+	            l.FillScope( s, nl.nl ); 
 	    }     
-	    else {   
-	        e.FillScope( s, n ); // Handle multiple retvals if last expression is a functioncall
+	    else{   
+	        e.FillScope( s, nl ); // Handle multiple retvals if last expression is a functioncall
 	    }
 	}
 	public ILuaName Resolve( LuaScope s ){
@@ -851,7 +852,7 @@
     public override void FillScope( LuaScope s, var v_left ){
         ILuaName right = p.Resolve( s );
         ILuaName l = e.Resolve( s );
-        if( right == null || right.type != LuaType.Table )
+        if( right == null || right.type != LuaType.Table || l == null )
             return;
                    
         LuaTable t = (LuaTable)right;

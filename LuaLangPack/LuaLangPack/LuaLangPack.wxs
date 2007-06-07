@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>
 
-   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.6'>
+   <Product Id='E6EE2C7D-88A7-4654-BC43-2F252083C472' Language='1033' Manufacturer='trystan.org' Name='LuaLangPack' Version='0.6.1'>
 
       <Package Id='14DADF49-CFF6-436c-B3E9-E3320DF3B0A6'/>
       <Media Id='1' Cabinet='product.cab' EmbedCab='yes' />

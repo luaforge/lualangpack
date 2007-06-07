@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Package;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using Tools;
 
 
@@ -23,6 +24,12 @@ namespace Vsip.LuaLangPack
         private LuaAuthScope m_authScope = new LuaAuthScope();
         private LuaScope m_globalScope = new LuaScope((LuaScope)null);
         private Hashtable m_fileScopes = new Hashtable();
+        private TextWriterTraceListener m_log = new TextWriterTraceListener("vsluaplugin_log.txt");
+
+        public LuaLangService()
+        {
+            Debug.Listeners.Add(m_log);
+        }
 
         static public string StringReverse(string str)
         {
@@ -220,9 +227,11 @@ namespace Vsip.LuaLangPack
                             fileScope.FileScope = fileScope;
                             node.FillScope(fileScope);
                         }
-                       catch (NullReferenceException nr)
+                        catch (NullReferenceException nr)
                         {
-                         
+                            Debug.Write(nr.Message);
+                            Debug.Write(nr.StackTrace);
+                            Debug.Flush();
                         }
                         fileScope.AddRegions(req.Sink);
                         req.Sink.ProcessHiddenRegions = true;

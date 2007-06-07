@@ -1,3 +1,12 @@
+Version 0.6.1
+---------------------------------------
+-Fixed stack overflow crash that occured when assigning a litteral return value from a function
+ at a nest level of 1 below the assignment.
+
+-Fixed null ptr exception on multiple local name initialization  
+
+
+
 Version 0.6
 ---------------------------------------
 -Added dynamic intellisense support

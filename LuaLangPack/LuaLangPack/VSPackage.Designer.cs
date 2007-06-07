@@ -88,7 +88,7 @@ internal class VSPackage {
     }
     
     /// <summary>
-    ///   Looks up a localized string similar to NOT_IN_SOURCE_DISTRO.
+    ///   Looks up a localized string similar to CONTACT MS FOR LOAD KEY.
     /// </summary>
     internal static string _110 {
         get {

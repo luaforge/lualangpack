@@ -624,7 +624,9 @@ public class LuaScope : LuaNamespace
         // to the rvalue scope in the lavalue 
         if (m_rValueScope != null)
         {
-            ILuaName ret = m_rValueScope.Lookup(name, line, pos);
+            LuaScope tmp = m_rValueScope;
+            m_rValueScope = null;
+            ILuaName ret = tmp.Lookup(name, line, pos);
             if (ret != null)
                 return ret;
         }
